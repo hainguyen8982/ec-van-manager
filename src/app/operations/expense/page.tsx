@@ -116,7 +116,7 @@ export default function ExpensePage() {
   const selectedCategoryData = categories.find(c => c.id === category);
 
   return (
-    <div>
+    <div className="page-transition">
       <h2 style={{ marginBottom: '1.5rem', fontSize: '1.5rem' }}>Ghi nhận Chi phí</h2>
 
       <div className="glass-panel">

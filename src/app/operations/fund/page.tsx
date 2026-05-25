@@ -32,7 +32,7 @@ export default function FundPage() {
   };
 
   return (
-    <div>
+    <div className="page-transition">
       <h2 style={{ marginBottom: '1.5rem', fontSize: '1.5rem' }}>Ghi nhận Góp / Chi từ Quỹ</h2>
       <form onSubmit={handleSubmit} className="glass-panel">
         <div className="input-group" style={{ marginBottom: '1rem' }}>
@@ -75,7 +75,7 @@ export default function FundPage() {
           disabled={loading}
           style={{ width: '100%' }}
         >
-          {loading ? 'Đang lưu...' : 'Lưu giao dịch'}
+          Lưu giao dịch
         </button>
       </form>
     </div>

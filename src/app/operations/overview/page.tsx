@@ -150,7 +150,14 @@ export default function OperationsOverview() {
 
   useEffect(() => { loadDashboard(); }, [loadDashboard]);
 
-  if (loading) return <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-secondary)' }}>Đang tải dữ liệu...</div>;
+  if (loading) return (
+    <div className="page-transition" style={{ display: 'grid', gap: '1rem', padding: '1rem 0' }}>
+      <div className="skeleton-box" style={{ height: '40px', width: '200px', marginBottom: '1rem' }}></div>
+      <div className="skeleton-box" style={{ height: '120px' }}></div>
+      <div className="skeleton-box" style={{ height: '120px' }}></div>
+      <div className="skeleton-box" style={{ height: '120px' }}></div>
+    </div>
+  );
   if (!stats) return null;
 
   const renderAppCard = (name: string, income: number, count: number, totalIncome: number, color: string, isBest: boolean = false) => {
@@ -190,7 +197,7 @@ export default function OperationsOverview() {
   };
 
   return (
-    <div>
+    <div className="page-transition">
       {/* Tab Header */}
       <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem', borderBottom: '1px solid var(--glass-border)', paddingBottom: '0.5rem' }}>
         <button onClick={() => setActiveTab('week')} className={`btn ${activeTab === 'week' ? 'btn-primary' : 'btn-glass'}`} style={{ padding: '8px 16px', fontSize: '0.9rem', flex: 1 }}>
