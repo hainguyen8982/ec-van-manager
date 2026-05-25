@@ -58,8 +58,7 @@ export default function OperationsSettlementPage() {
     // Calculate exact days for proportional fixed costs
     const startDay = new Date(startDateObj.getFullYear(), startDateObj.getMonth(), startDateObj.getDate());
     const endDay = new Date(endDateObj.getFullYear(), endDateObj.getMonth(), endDateObj.getDate());
-    let days = Math.round((endDay.getTime() - startDay.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-    if (days < 1) days = 1;
+    let days = Math.max(0, Math.round((endDay.getTime() - startDay.getTime()) / (1000 * 60 * 60 * 24)));
 
     const [txRes, settingsRes] = await Promise.all([
       supabase.from('transactions').select('*').is('settlement_id', null).lte('transaction_date', endDateObj.toISOString()).order('transaction_date', { ascending: true }),
@@ -305,7 +304,10 @@ const reserveBalance = reserveWeekly - reserveSpent;
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', marginBottom: '1rem' }}>
               {stats.transactions.filter(t => t.type === 'income').map(t => (
                 <div key={t.id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', padding: '4px 8px', background: 'rgba(255,255,255,0.02)', borderRadius: '4px' }}>
-                  <span style={{ color: 'var(--text-secondary)' }}>{new Date(t.transaction_date).toLocaleDateString('vi-VN')} - {getCategoryName(t.category, true)} {t.note ? `(${t.note})` : ''}</span>
+                  <span style={{ color: 'var(--text-secondary)' }}>
+                    {new Date(t.transaction_date).toLocaleDateString('vi-VN')} - {getCategoryName(t.category, true)} {t.note ? `(${t.note})` : ''}
+                    {t.receipt_url && <a href={t.receipt_url} target="_blank" rel="noreferrer" style={{ marginLeft: '8px', color: 'var(--primary)' }}>📷</a>}
+                  </span>
                   <span style={{ color: 'var(--success)' }}>+{fmt(t.amount)}</span>
                 </div>
               ))}
@@ -318,7 +320,10 @@ const reserveBalance = reserveWeekly - reserveSpent;
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', marginBottom: '1rem' }}>
               {stats.transactions.filter(t => t.type === 'expense' && !t.is_fund_spent).map(t => (
                 <div key={t.id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', padding: '4px 8px', background: 'rgba(255,255,255,0.02)', borderRadius: '4px' }}>
-                  <span style={{ color: 'var(--text-secondary)' }}>{new Date(t.transaction_date).toLocaleDateString('vi-VN')} - {getCategoryName(t.category, false)} {t.note ? `(${t.note})` : ''}</span>
+                  <span style={{ color: 'var(--text-secondary)' }}>
+                    {new Date(t.transaction_date).toLocaleDateString('vi-VN')} - {getCategoryName(t.category, false)} {t.note ? `(${t.note})` : ''}
+                    {t.receipt_url && <a href={t.receipt_url} target="_blank" rel="noreferrer" style={{ marginLeft: '8px', color: 'var(--primary)' }}>📷</a>}
+                  </span>
                   <span style={{ color: 'var(--danger)' }}>-{fmt(t.amount)}</span>
                 </div>
               ))}
@@ -333,7 +338,10 @@ const reserveBalance = reserveWeekly - reserveSpent;
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
                   {stats.transactions.filter(t => t.type === 'expense' && t.is_fund_spent).map(t => (
                     <div key={t.id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', padding: '4px 8px', background: 'rgba(255,255,255,0.02)', borderRadius: '4px' }}>
-                      <span style={{ color: 'var(--text-secondary)' }}>{new Date(t.transaction_date).toLocaleDateString('vi-VN')} - {getCategoryName(t.category, false)} {t.note ? `(${t.note})` : ''}</span>
+                      <span style={{ color: 'var(--text-secondary)' }}>
+                        {new Date(t.transaction_date).toLocaleDateString('vi-VN')} - {getCategoryName(t.category, false)} {t.note ? `(${t.note})` : ''}
+                        {t.receipt_url && <a href={t.receipt_url} target="_blank" rel="noreferrer" style={{ marginLeft: '8px', color: 'var(--primary)' }}>📷</a>}
+                      </span>
                       <span style={{ color: 'var(--warning)' }}>-{fmt(t.amount)}</span>
                     </div>
                   ))}

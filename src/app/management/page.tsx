@@ -100,8 +100,7 @@ export default function ManagementDashboard() {
     }
     const startDay = new Date(startDateObj.getFullYear(), startDateObj.getMonth(), startDateObj.getDate());
     const endDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    let days = Math.round((endDay.getTime() - startDay.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-    if (days < 1) days = 1;
+    let days = Math.max(0, Math.round((endDay.getTime() - startDay.getTime()) / (1000 * 60 * 60 * 24)));
 
     const weeklyFixed = settings
       ? (settings.is_bank_loan_active !== false ? Math.round((settings.bank_loan_monthly / 30) * days) : 0)

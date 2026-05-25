@@ -11,6 +11,8 @@ export default function ExpensePage() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
+  const [file, setFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
 
   const [categories, setCategories] = useState<{ id: string; name: string; icon: string; isFundEligible: boolean }[]>([]);
   const [loadingCategories, setLoadingCategories] = useState(true);
@@ -65,7 +67,26 @@ export default function ExpensePage() {
     const supabase = createClient();
     const { week_number, week_year } = getWeekInfo();
 
-    const { error } = await supabase.from('transactions').insert({
+    let receipt_url = null;
+    if (file) {
+      setUploading(true);
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
+      const { data: uploadData, error: uploadError } = await supabase.storage.from('receipts').upload(fileName, file);
+      
+      if (uploadError) {
+        setError('Lỗi tải ảnh lên: ' + uploadError.message);
+        setLoading(false);
+        setUploading(false);
+        return;
+      }
+      
+      const { data: publicUrlData } = supabase.storage.from('receipts').getPublicUrl(fileName);
+      receipt_url = publicUrlData.publicUrl;
+      setUploading(false);
+    }
+
+    const { error: insertError } = await supabase.from('transactions').insert({
       type: 'expense',
       amount: rawAmount,
       category,
@@ -74,9 +95,10 @@ export default function ExpensePage() {
       week_number,
       week_year,
       is_fund_spent: isFundSpent,
+      receipt_url,
     });
 
-    if (error) {
+    if (insertError) {
       setError('Có lỗi xảy ra, vui lòng thử lại.');
     } else {
       const selectedCat = categories.find(c => c.id === category);
@@ -84,6 +106,7 @@ export default function ExpensePage() {
       setAmount('');
       setNote('');
       setIsFundSpent(false);
+      setFile(null);
     }
     setLoading(false);
   };
@@ -167,16 +190,30 @@ export default function ExpensePage() {
 
           <div className="input-group" style={{ marginTop: '1.5rem' }}>
             <label className="input-label">Ảnh hóa đơn (Tùy chọn)</label>
-            <div style={{
+            <label style={{
               border: '1px dashed var(--glass-border-hover)',
               borderRadius: 'var(--radius-sm)',
               padding: '24px',
               textAlign: 'center',
-              cursor: 'pointer'
+              cursor: 'pointer',
+              display: 'block'
             }}>
+              <input 
+                type="file" 
+                accept="image/*" 
+                onChange={(e) => {
+                  if (e.target.files && e.target.files[0]) {
+                    setFile(e.target.files[0]);
+                  }
+                }} 
+                style={{ display: 'none' }} 
+              />
               <span style={{ fontSize: '2rem' }}>📷</span>
-              <p style={{ marginTop: '0.5rem', fontSize: '0.9rem' }}>Chạm để chụp ảnh hoặc tải lên</p>
-            </div>
+              <p style={{ marginTop: '0.5rem', fontSize: '0.9rem' }}>
+                {file ? file.name : 'Chạm để chụp ảnh hoặc tải lên'}
+              </p>
+              {uploading && <p style={{ marginTop: '0.5rem', fontSize: '0.8rem', color: 'var(--primary)' }}>Đang tải ảnh lên...</p>}
+            </label>
           </div>
 
           {success && (
