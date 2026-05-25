@@ -1,66 +1,55 @@
-import Image from "next/image";
-import styles from "./page.module.css";
+import { createClient } from '@/lib/supabase/server';
+import { redirect } from 'next/navigation';
+import Link from 'next/link';
 
-export default function Home() {
+export default async function Home() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect('/login');
+  }
+
+  // Fetch the role from the public.profiles table
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .maybeSingle();
+
+  // If the user role is 'partner' (driver), immediately redirect them to operations
+  if (profile && profile.role === 'partner') {
+    redirect('/operations');
+  }
+
   return (
-    <div className={styles.page}>
-      <main className={styles.main}>
-        <Image
-          className={styles.logo}
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className={styles.intro}>
-          <h1>To get started, edit the page.tsx file.</h1>
-          <p>
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', alignItems: 'center', marginTop: '1rem' }}>
+      <div style={{ textAlign: 'center' }}>
+        <h1 style={{ fontSize: '2rem' }}>Quản lý Doanh thu</h1>
+        <p style={{ maxWidth: '600px', margin: '0 auto', fontSize: '0.95rem' }}>
+          Hệ thống minh bạch quản lý thu chi, quỹ ngân hàng và tự động phân chia lợi nhuận.
+        </p>
+      </div>
+      
+      <div style={{ display: 'flex', flexDirection: 'column', width: '100%', gap: '1rem', marginTop: '1rem' }}>
+        <Link href="/operations" className="btn btn-primary" style={{ width: '100%', padding: '16px', fontSize: '1.1rem' }}>
+          Góc Vận Hành (Nhập liệu)
+        </Link>
+        <Link href="/management" className="btn btn-glass" style={{ width: '100%', padding: '16px', fontSize: '1.1rem' }}>
+          Góc Quản Lý (Báo cáo & Cài đặt)
+        </Link>
+      </div>
+      
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', width: '100%', marginTop: '1.5rem' }}>
+        <div className="glass-panel">
+          <h3 style={{ fontSize: '1.1rem' }}>Ghi nhận Nhanh chóng</h3>
+          <p style={{ marginTop: '0.5rem', fontSize: '0.9rem' }}>Nhập doanh thu từ các app và các chi phí vận hành (sạc pin, cầu đường) cực nhanh trên điện thoại.</p>
         </div>
-        <div className={styles.ctas}>
-          <a
-            className={styles.primary}
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className={styles.logo}
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className={styles.secondary}
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+        <div className="glass-panel">
+          <h3 style={{ fontSize: '1.1rem' }}>Chốt sổ Tự động</h3>
+          <p style={{ marginTop: '0.5rem', fontSize: '0.9rem' }}>Tự động phân chia lợi nhuận, trích quỹ ngân hàng và quản lý nợ chuyển kỳ sau.</p>
         </div>
-      </main>
+      </div>
     </div>
   );
 }
