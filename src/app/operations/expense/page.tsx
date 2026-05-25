@@ -12,6 +12,7 @@ export default function ExpensePage() {
   const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
   const [file, setFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
 
   const [categories, setCategories] = useState<{ id: string; name: string; icon: string; isFundEligible: boolean }[]>([]);
@@ -107,6 +108,7 @@ export default function ExpensePage() {
       setNote('');
       setIsFundSpent(false);
       setFile(null);
+      setPreviewUrl(null);
     }
     setLoading(false);
   };
@@ -203,15 +205,25 @@ export default function ExpensePage() {
                 accept="image/*" 
                 onChange={(e) => {
                   if (e.target.files && e.target.files[0]) {
-                    setFile(e.target.files[0]);
+                    const selectedFile = e.target.files[0];
+                    setFile(selectedFile);
+                    setPreviewUrl(URL.createObjectURL(selectedFile));
                   }
                 }} 
                 style={{ display: 'none' }} 
               />
-              <span style={{ fontSize: '2rem' }}>📷</span>
-              <p style={{ marginTop: '0.5rem', fontSize: '0.9rem' }}>
-                {file ? file.name : 'Chạm để chụp ảnh hoặc tải lên'}
-              </p>
+              {previewUrl ? (
+                <div style={{ position: 'relative', width: '100%', maxWidth: '200px', margin: '0 auto' }}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={previewUrl} alt="Preview" style={{ width: '100%', borderRadius: '8px', objectFit: 'cover' }} />
+                  <p style={{ marginTop: '0.5rem', fontSize: '0.9rem', color: 'var(--primary)' }}>Chạm để đổi ảnh khác</p>
+                </div>
+              ) : (
+                <>
+                  <span style={{ fontSize: '2rem' }}>📷</span>
+                  <p style={{ marginTop: '0.5rem', fontSize: '0.9rem' }}>Chạm để chụp ảnh hoặc tải lên</p>
+                </>
+              )}
               {uploading && <p style={{ marginTop: '0.5rem', fontSize: '0.8rem', color: 'var(--primary)' }}>Đang tải ảnh lên...</p>}
             </label>
           </div>
