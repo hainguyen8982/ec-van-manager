@@ -60,6 +60,7 @@ interface DashboardStats {
   allTransactions: any[];
   expenseCategories: any[];
   revenueSources: any[];
+  settlementHistory: any[];
 }
 
 export default function ManagementDashboard() {

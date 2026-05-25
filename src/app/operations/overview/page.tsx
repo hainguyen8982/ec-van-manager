@@ -218,7 +218,7 @@ export default function OperationsOverview() {
             </div>
             {stats.carryForward > 0 && (
               <div className="glass-panel" style={{ borderLeft: '4px solid var(--danger)' }}>
-                <p className="input-label">Khoản nợ chuyển từ tuần trước</p>
+                <p className="input-label">Khoản nợ chuyển từ kỳ trước</p>
                 <h3 style={{ fontSize: '1.8rem', color: 'var(--danger)' }}>- {fmt(stats.carryForward)} đ</h3>
               </div>
             )}

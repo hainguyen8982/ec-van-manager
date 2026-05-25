@@ -12,12 +12,12 @@ interface WeekStats {
   driverAmount: number;
   ownerAmount: number;
   driverRatio: number;
-  weekNumber: number;
-  weekYear: number;
+  weekNumber?: number;
+  weekYear?: number;
   bankLoanWeekly: number;
   parkingWeekly: number;
   reserveWeekly: number;
-  fundDeduction: number;
+  fundDeduction?: number;
   fundDeductionNote?: string;
   reserveSpent?: number;
   reserveBalance?: number;
@@ -151,7 +151,7 @@ const reserveBalance = reserveWeekly - reserveSpent;
       text += `(Tiền Lãi + Tiền Dự phòng)\n`;
       text += `=> ${fmt(stats.ownerAmount + stats.reserveWeekly)} đ\n`;
     } else {
-      text += `\n⚠️ Lợi nhuận âm, khoản thiếu sẽ chuyển sang nợ tuần sau.\n`;
+      text += `\n⚠️ Lợi nhuận âm, khoản thiếu sẽ chuyển sang nợ kỳ sau.\n`;
     }
     
     text += `\n--- BẢNG KÊ CHI PHÍ ---\n`;
@@ -280,7 +280,7 @@ const reserveBalance = reserveWeekly - reserveSpent;
 
       {stats.netProfit < 0 && (
         <div className="glass-panel" style={{ marginBottom: '1.5rem', border: '1px solid var(--danger)' }}>
-          <p style={{ color: 'var(--warning)' }}>⚠️ Tuần này lợi nhuận âm. Khoản thiếu <strong>{fmt(Math.abs(stats.netProfit))} đ</strong> sẽ được cộng vào tuần sau.</p>
+          <p style={{ color: 'var(--warning)' }}>⚠️ Kỳ này lợi nhuận âm. Khoản thiếu <strong>{fmt(Math.abs(stats.netProfit))} đ</strong> sẽ được cộng vào kỳ sau.</p>
         </div>
       )}
 

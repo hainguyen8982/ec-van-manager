@@ -159,7 +159,7 @@ export default function ExpensePage() {
               </div>
               {isFundSpent && (
                 <p style={{ fontSize: '0.8rem', color: 'var(--warning)', marginTop: '0.5rem', lineHeight: 1.4 }}>
-                  ⚠️ Chi phí này sẽ được trừ trực tiếp từ số dư Quỹ dự phòng và KHÔNG tính vào chi phí vận hành tuần của tài xế.
+                  ⚠️ Chi phí này sẽ được trừ trực tiếp từ số dư Quỹ dự phòng và KHÔNG tính vào chi phí vận hành kỳ này của tài xế.
                 </p>
               )}
             </>
