@@ -56,8 +56,10 @@ export default function OperationsSettlementPage() {
     const endDateObj = now;
     
     // Calculate exact days for proportional fixed costs
-    let days = Math.ceil((endDateObj.getTime() - startDateObj.getTime()) / (1000 * 60 * 60 * 24));
-    if (days < 1) days = 1; // minimum 1 day
+    const startDay = new Date(startDateObj.getFullYear(), startDateObj.getMonth(), startDateObj.getDate());
+    const endDay = new Date(endDateObj.getFullYear(), endDateObj.getMonth(), endDateObj.getDate());
+    let days = Math.round((endDay.getTime() - startDay.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+    if (days < 1) days = 1;
 
     const [txRes, settingsRes] = await Promise.all([
       supabase.from('transactions').select('*').is('settlement_id', null).lte('transaction_date', endDateObj.toISOString()).order('transaction_date', { ascending: true }),

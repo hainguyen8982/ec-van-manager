@@ -74,7 +74,9 @@ export default function OperationsOverview() {
       const lastSettlement = allSettlements[0];
       startDateObj = lastSettlement.end_date ? new Date(lastSettlement.end_date) : new Date(lastSettlement.created_at);
     }
-    let days = Math.ceil((now.getTime() - startDateObj.getTime()) / (1000 * 60 * 60 * 24));
+    const startDay = new Date(startDateObj.getFullYear(), startDateObj.getMonth(), startDateObj.getDate());
+    const endDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    let days = Math.round((endDay.getTime() - startDay.getTime()) / (1000 * 60 * 60 * 24)) + 1;
     if (days < 1) days = 1;
 
     const weeklyFixed = settings
