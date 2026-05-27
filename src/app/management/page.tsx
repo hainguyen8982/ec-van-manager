@@ -647,6 +647,7 @@ export default function ManagementDashboard() {
                   </div>
                 )}
               </div>
+            </div>
           </div>
 
           {/* 2. LỢI NHUẬN LŨY KẾ ĐÃ CHIA */}
