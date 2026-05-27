@@ -30,20 +30,23 @@ interface DashboardStats {
   allTimeCharge: number;
   chargeEfficiency: number;
 
-  // Quản lý các quỹ
+  // Quỹ Ngân Hàng
   bankDeposited: number;
   bankSpent: number;
   bankBalance: number;
+  bankHistory: any[];
 
+  // Quỹ Bãi Xe
   parkingDeposited: number;
   parkingSpent: number;
   parkingBalance: number;
+  parkingHistory: any[];
 
+  // Quỹ Dự Phòng
   reserveDeposited: number;
   reserveSpent: number;
   reserveBalance: number;
-
-  fundHistory: any[];
+  reserveHistory: any[];
 
   // Lũy kế lợi nhuận đã chia
   cumulativeOwner: number;
@@ -81,7 +84,7 @@ export default function ManagementDashboard() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'week' | 'alltime'>('week');
-  const [showReserveDetails, setShowReserveDetails] = useState(false);
+  const [expandedFund, setExpandedFund] = useState<string | null>(null);
   const supabase = createClient();
 
   const [expandedSettlementId, setExpandedSettlementId] = useState<string | null>(null);
@@ -158,6 +161,35 @@ export default function ManagementDashboard() {
     const bankBalance = bankDeposited - bankSpent;
     const parkingBalance = parkingDeposited - parkingSpent;
     const reserveBalance = reserveDeposited - reserveSpent;
+
+    // Lịch sử chi tiết từng quỹ
+    const buildHistory = (cat: string, depField: string) => {
+      const deposits = allSettlements
+        .filter(x => Number(x[depField] || 0) > 0)
+        .map(x => ({
+          type: 'deposit',
+          amount: Number(x[depField]),
+          date: x.created_at,
+          note: `Trích từ chốt sổ (Kỳ ${x.week_number || new Date(x.created_at).toLocaleDateString('vi-VN')})`,
+          isIncome: true
+        }));
+      
+      const expenses = fundSpentTxs
+        .filter(t => cat === 'reserve' ? (t.category !== 'bank' && t.category !== 'parking') : t.category === cat)
+        .map(t => ({
+          type: 'expense',
+          amount: t.amount,
+          date: t.transaction_date,
+          note: t.note || 'Chi quỹ',
+          isIncome: false
+        }));
+
+      return [...deposits, ...expenses].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    };
+
+    const bankHistory = buildHistory('bank', 'bank_loan_weekly');
+    const parkingHistory = buildHistory('parking', 'parking_weekly');
+    const reserveHistory = buildHistory('reserve', 'reserve_weekly');
 
     // --- 5. TÍNH LŨY KẾ LỢI NHUẬN ĐÃ CHIA ---
     const cumulativeOwner = allSettlements.reduce((s, x) => s + Number(x.owner_amount || 0), 0);
@@ -254,13 +286,15 @@ export default function ManagementDashboard() {
       bankDeposited,
       bankSpent,
       bankBalance,
+      bankHistory,
       parkingDeposited,
       parkingSpent,
       parkingBalance,
+      parkingHistory,
       reserveDeposited,
       reserveSpent,
       reserveBalance,
-      fundHistory: fundSpentTxs.slice(0, 10), // 10 khoản chi quỹ gần nhất
+      reserveHistory,
       cumulativeOwner,
       cumulativeDriver,
       weeksSinceRepair,
@@ -507,75 +541,112 @@ export default function ManagementDashboard() {
             
             <div style={{ display: 'grid', gap: '0.5rem', marginBottom: '1rem' }}>
               {/* Quỹ Ngân Hàng */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 12px', background: 'rgba(255,255,255,0.02)', borderRadius: '4px', border: '1px solid var(--glass-border)' }}>
-                <div>
-                  <p style={{ fontWeight: 600, fontSize: '0.95rem' }}>🏦 Quỹ Ngân hàng</p>
-                  <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Trích: +{fmt(stats.bankDeposited)} | Chi: -{fmt(stats.bankSpent)}</p>
+              <div 
+                onClick={() => setExpandedFund(expandedFund === 'bank' ? null : 'bank')}
+                style={{ cursor: 'pointer', padding: '10px 12px', background: 'rgba(255,255,255,0.02)', borderRadius: '4px', border: expandedFund === 'bank' ? '1px solid var(--primary)' : '1px solid var(--glass-border)' }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div>
+                    <p style={{ fontWeight: 600, fontSize: '0.95rem', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      🏦 Quỹ Ngân hàng {expandedFund === 'bank' ? '▼' : '▶'}
+                    </p>
+                    <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Trích: +{fmt(stats.bankDeposited)} | Chi: -{fmt(stats.bankSpent)}</p>
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Số dư</p>
+                    <p style={{ fontWeight: 700, fontSize: '1.1rem', color: stats.bankBalance >= 0 ? 'var(--success)' : 'var(--danger)' }}>{fmt(stats.bankBalance)}</p>
+                  </div>
                 </div>
-                <div style={{ textAlign: 'right' }}>
-                  <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Số dư</p>
-                  <p style={{ fontWeight: 700, fontSize: '1.1rem', color: stats.bankBalance >= 0 ? 'var(--success)' : 'var(--danger)' }}>{fmt(stats.bankBalance)}</p>
-                </div>
+                {expandedFund === 'bank' && (
+                  <div style={{ marginTop: '1rem', borderTop: '1px dashed var(--glass-border)', paddingTop: '0.75rem' }}>
+                    <p style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>Chi tiết giao dịch:</p>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      {stats.bankHistory.length > 0 ? stats.bankHistory.map((item, idx) => (
+                        <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', padding: '6px 8px', background: 'rgba(0,0,0,0.15)', borderRadius: '4px' }}>
+                          <div>
+                            <span style={{ color: item.isIncome ? 'var(--success)' : 'var(--danger)', fontWeight: 500 }}>{item.isIncome ? 'Nạp quỹ' : 'Chi quỹ'}</span>
+                            <span style={{ color: 'var(--text-secondary)', marginLeft: '0.5rem' }}>({new Date(item.date).toLocaleDateString('vi-VN')})</span>
+                            <p style={{ color: 'var(--text-secondary)', fontSize: '0.75rem', marginTop: '2px' }}>{item.note}</p>
+                          </div>
+                          <strong style={{ color: item.isIncome ? 'var(--success)' : 'var(--danger)' }}>{item.isIncome ? '+' : '-'}{fmt(item.amount)}</strong>
+                        </div>
+                      )) : <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Chưa có giao dịch.</p>}
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Quỹ Bãi Xe */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 12px', background: 'rgba(255,255,255,0.02)', borderRadius: '4px', border: '1px solid var(--glass-border)' }}>
-                <div>
-                  <p style={{ fontWeight: 600, fontSize: '0.95rem' }}>🅿️ Quỹ Bãi xe</p>
-                  <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Trích: +{fmt(stats.parkingDeposited)} | Chi: -{fmt(stats.parkingSpent)}</p>
+              <div 
+                onClick={() => setExpandedFund(expandedFund === 'parking' ? null : 'parking')}
+                style={{ cursor: 'pointer', padding: '10px 12px', background: 'rgba(255,255,255,0.02)', borderRadius: '4px', border: expandedFund === 'parking' ? '1px solid var(--primary)' : '1px solid var(--glass-border)' }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div>
+                    <p style={{ fontWeight: 600, fontSize: '0.95rem', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      🅿️ Quỹ Bãi xe {expandedFund === 'parking' ? '▼' : '▶'}
+                    </p>
+                    <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Trích: +{fmt(stats.parkingDeposited)} | Chi: -{fmt(stats.parkingSpent)}</p>
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Số dư</p>
+                    <p style={{ fontWeight: 700, fontSize: '1.1rem', color: stats.parkingBalance >= 0 ? 'var(--success)' : 'var(--danger)' }}>{fmt(stats.parkingBalance)}</p>
+                  </div>
                 </div>
-                <div style={{ textAlign: 'right' }}>
-                  <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Số dư</p>
-                  <p style={{ fontWeight: 700, fontSize: '1.1rem', color: stats.parkingBalance >= 0 ? 'var(--success)' : 'var(--danger)' }}>{fmt(stats.parkingBalance)}</p>
-                </div>
+                {expandedFund === 'parking' && (
+                  <div style={{ marginTop: '1rem', borderTop: '1px dashed var(--glass-border)', paddingTop: '0.75rem' }}>
+                    <p style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>Chi tiết giao dịch:</p>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      {stats.parkingHistory.length > 0 ? stats.parkingHistory.map((item, idx) => (
+                        <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', padding: '6px 8px', background: 'rgba(0,0,0,0.15)', borderRadius: '4px' }}>
+                          <div>
+                            <span style={{ color: item.isIncome ? 'var(--success)' : 'var(--danger)', fontWeight: 500 }}>{item.isIncome ? 'Nạp quỹ' : 'Chi quỹ'}</span>
+                            <span style={{ color: 'var(--text-secondary)', marginLeft: '0.5rem' }}>({new Date(item.date).toLocaleDateString('vi-VN')})</span>
+                            <p style={{ color: 'var(--text-secondary)', fontSize: '0.75rem', marginTop: '2px' }}>{item.note}</p>
+                          </div>
+                          <strong style={{ color: item.isIncome ? 'var(--success)' : 'var(--danger)' }}>{item.isIncome ? '+' : '-'}{fmt(item.amount)}</strong>
+                        </div>
+                      )) : <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Chưa có giao dịch.</p>}
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Quỹ Dự Phòng */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 12px', background: 'rgba(255,255,255,0.02)', borderRadius: '4px', border: '1px solid var(--glass-border)' }}>
-                <div>
-                  <p style={{ fontWeight: 600, fontSize: '0.95rem' }}>🔧 Quỹ Dự phòng</p>
-                  <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Trích: +{fmt(stats.reserveDeposited)} | Chi: -{fmt(stats.reserveSpent)}</p>
-                </div>
-                <div style={{ textAlign: 'right' }}>
-                  <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Số dư</p>
-                  <p style={{ fontWeight: 700, fontSize: '1.1rem', color: stats.reserveBalance >= 0 ? 'var(--success)' : 'var(--danger)' }}>{fmt(stats.reserveBalance)}</p>
-                </div>
-              </div>
-            </div>
-
-            {stats.fundHistory.length > 0 && (
-              <button 
-                onClick={() => setShowReserveDetails(!showReserveDetails)} 
-                className="btn btn-glass" 
-                style={{ marginTop: '0.5rem', width: '100%' }}
+              <div 
+                onClick={() => setExpandedFund(expandedFund === 'reserve' ? null : 'reserve')}
+                style={{ cursor: 'pointer', padding: '10px 12px', background: 'rgba(255,255,255,0.02)', borderRadius: '4px', border: expandedFund === 'reserve' ? '1px solid var(--primary)' : '1px solid var(--glass-border)' }}
               >
-                {showReserveDetails ? 'Ẩn chi tiết chi quỹ' : 'Xem lịch sử chi quỹ'}
-              </button>
-            )}
-
-            {showReserveDetails && stats.fundHistory.length > 0 && (
-              <div style={{ marginTop: '1rem' }}>
-                <p style={{ fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>Lịch sử chi quỹ gần đây:</p>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                  {stats.fundHistory.map((item, idx) => {
-                    let iconName = '📦 Khác';
-                    if (item.category === 'repair') iconName = '🔧 Sửa chữa';
-                    if (item.category === 'bank') iconName = '🏦 Ngân hàng';
-                    if (item.category === 'parking') iconName = '🅿️ Bãi xe';
-                    return (
-                      <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', padding: '6px 8px', background: 'rgba(255,255,255,0.02)', borderRadius: '4px' }}>
-                        <div>
-                          <span style={{ color: 'var(--text-primary)', fontWeight: 500 }}>{iconName}</span>
-                          <span style={{ color: 'var(--text-secondary)', marginLeft: '0.5rem' }}>({new Date(item.transaction_date).toLocaleDateString('vi-VN')})</span>
-                          {item.note && <p style={{ color: 'var(--text-secondary)', fontSize: '0.75rem', marginTop: '2px' }}>{item.note}</p>}
-                        </div>
-                        <strong style={{ color: 'var(--danger)' }}>-{fmt(item.amount)} đ</strong>
-                      </div>
-                    );
-                  })}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div>
+                    <p style={{ fontWeight: 600, fontSize: '0.95rem', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      🔧 Quỹ Dự phòng {expandedFund === 'reserve' ? '▼' : '▶'}
+                    </p>
+                    <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Trích: +{fmt(stats.reserveDeposited)} | Chi: -{fmt(stats.reserveSpent)}</p>
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Số dư</p>
+                    <p style={{ fontWeight: 700, fontSize: '1.1rem', color: stats.reserveBalance >= 0 ? 'var(--success)' : 'var(--danger)' }}>{fmt(stats.reserveBalance)}</p>
+                  </div>
                 </div>
+                {expandedFund === 'reserve' && (
+                  <div style={{ marginTop: '1rem', borderTop: '1px dashed var(--glass-border)', paddingTop: '0.75rem' }}>
+                    <p style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>Chi tiết giao dịch:</p>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      {stats.reserveHistory.length > 0 ? stats.reserveHistory.map((item, idx) => (
+                        <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', padding: '6px 8px', background: 'rgba(0,0,0,0.15)', borderRadius: '4px' }}>
+                          <div>
+                            <span style={{ color: item.isIncome ? 'var(--success)' : 'var(--danger)', fontWeight: 500 }}>{item.isIncome ? 'Nạp quỹ' : 'Chi quỹ'}</span>
+                            <span style={{ color: 'var(--text-secondary)', marginLeft: '0.5rem' }}>({new Date(item.date).toLocaleDateString('vi-VN')})</span>
+                            <p style={{ color: 'var(--text-secondary)', fontSize: '0.75rem', marginTop: '2px' }}>{item.note}</p>
+                          </div>
+                          <strong style={{ color: item.isIncome ? 'var(--success)' : 'var(--danger)' }}>{item.isIncome ? '+' : '-'}{fmt(item.amount)}</strong>
+                        </div>
+                      )) : <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Chưa có giao dịch.</p>}
+                    </div>
+                  </div>
+                )}
               </div>
-            )}
           </div>
 
           {/* 2. LỢI NHUẬN LŨY KẾ ĐÃ CHIA */}
