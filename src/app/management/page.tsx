@@ -62,6 +62,19 @@ interface DashboardStats {
   expenseCategories: any[];
   revenueSources: any[];
   settlementHistory: any[];
+
+  // Trend
+  trendData: {
+    hasData: boolean;
+    incomeCurrent: number;
+    incomePrev: number;
+    incomeDiffPct: number;
+    profitCurrent: number;
+    profitPrev: number;
+    profitDiffPct: number;
+    profitMargin: number;
+    insight: string;
+  } | null;
 }
 
 export default function ManagementDashboard() {
@@ -174,6 +187,54 @@ export default function ManagementDashboard() {
     const needsMaintenance = weeksSinceRepair >= intervalLimitWeeks;
     const isFundLow = reserveBalance < minFundLimit;
 
+    // --- 7. PHÂN TÍCH XU HƯỚNG ---
+    let trendData = null;
+    if (allSettlements.length >= 2) {
+      const current = allSettlements[0];
+      const prev = allSettlements[1];
+
+      const incomeCurrent = current.total_income || 0;
+      const incomePrev = prev.total_income || 0;
+      const incomeDiffPct = incomePrev > 0 ? ((incomeCurrent - incomePrev) / incomePrev) * 100 : 0;
+
+      const profitCurrent = current.net_profit || 0;
+      const profitPrev = prev.net_profit || 0;
+      const profitDiffPct = Math.abs(profitPrev) > 0 ? ((profitCurrent - profitPrev) / Math.abs(profitPrev)) * 100 : 0;
+
+      const profitMargin = incomeCurrent > 0 ? (profitCurrent / incomeCurrent) * 100 : 0;
+
+      let insight = '';
+      if (incomeDiffPct > 0 && profitDiffPct > 0) {
+        insight = 'Doanh thu và lợi nhuận đều tăng trưởng. Hãy duy trì nhịp độ này!';
+      } else if (incomeDiffPct > 0 && profitDiffPct < 0) {
+        insight = 'Doanh thu tăng nhưng lợi nhuận giảm. Cần xem lại chi phí vận hành (đặc biệt là sạc điện hoặc bảo dưỡng)!';
+      } else if (incomeDiffPct < 0 && profitDiffPct > 0) {
+        insight = 'Doanh thu giảm nhưng lợi nhuận tăng nhờ tối ưu chi phí rất tốt.';
+      } else if (incomeDiffPct < 0 && profitDiffPct < 0) {
+        insight = 'Cả doanh thu và lợi nhuận đều sụt giảm. Cần xem xét tăng giờ chạy hoặc tìm hiểu nguyên nhân thị trường.';
+      } else {
+        insight = 'Tình hình kinh doanh duy trì ổn định so với kỳ trước.';
+      }
+
+      if (profitMargin > 30) {
+        insight += ' Tỷ suất lợi nhuận duy trì ở mức cao ấn tượng (>30%).';
+      } else if (profitMargin < 10 && profitMargin > 0) {
+        insight += ' Tỷ suất lợi nhuận khá mỏng (<10%).';
+      }
+
+      trendData = {
+        hasData: true,
+        incomeCurrent,
+        incomePrev,
+        incomeDiffPct,
+        profitCurrent,
+        profitPrev,
+        profitDiffPct,
+        profitMargin,
+        insight,
+      };
+    }
+
     setStats({
       totalIncome,
       totalExpense,
@@ -217,6 +278,7 @@ export default function ManagementDashboard() {
       allTimeAhamoveOrders: allTimeIncomeTxs.filter(t => t.type === 'income' && t.category === 'ahamove').length,
       allTimeLalamoveOrders: allTimeIncomeTxs.filter(t => t.type === 'income' && t.category === 'lalamove').length,
       allTimeOtherOrders: allTimeIncomeTxs.filter(t => t.type === 'income' && !['grab', 'ahamove', 'lalamove'].includes(t.category)).length,
+      trendData,
     });
     setLoading(false);
   }, [supabase]);
@@ -363,6 +425,54 @@ export default function ManagementDashboard() {
             defaultStartDate={stats.allTransactions[stats.allTransactions.length - 1]?.transaction_date}
             defaultEndDate={new Date().toISOString()}
           />
+
+          {/* PHÂN TÍCH XU HƯỚNG */}
+          {stats.trendData && stats.trendData.hasData && (
+            <div className="glass-panel" style={{ borderLeft: '4px solid var(--primary)', background: 'linear-gradient(135deg, rgba(58,123,213,0.05) 0%, rgba(0,210,255,0.05) 100%)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
+                <span style={{ fontSize: '1.5rem' }}>📈</span>
+                <h3 style={{ fontSize: '1.1rem', color: 'var(--text-primary)' }}>Phân tích Xu hướng Kinh doanh</h3>
+              </div>
+              <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '1rem' }}>
+                So sánh kỳ chốt sổ gần nhất với kỳ ngay trước đó.
+              </p>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '1rem', marginBottom: '1rem' }}>
+                {/* Doanh thu */}
+                <div style={{ background: 'rgba(0,0,0,0.15)', padding: '12px', borderRadius: '8px', border: '1px solid var(--glass-border)' }}>
+                  <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Doanh thu kỳ trước</p>
+                  <p style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--text-primary)', margin: '4px 0' }}>{fmt(stats.trendData.incomeCurrent)} đ</p>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.8rem', color: stats.trendData.incomeDiffPct >= 0 ? 'var(--success)' : 'var(--danger)' }}>
+                    <span>{stats.trendData.incomeDiffPct >= 0 ? '▲' : '▼'} {Math.abs(stats.trendData.incomeDiffPct).toFixed(1)}%</span>
+                    <span style={{ color: 'var(--text-secondary)' }}>so với kỳ trước đó</span>
+                  </div>
+                </div>
+
+                {/* Lợi nhuận */}
+                <div style={{ background: 'rgba(0,0,0,0.15)', padding: '12px', borderRadius: '8px', border: '1px solid var(--glass-border)' }}>
+                  <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Lợi nhuận kỳ trước</p>
+                  <p style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--text-primary)', margin: '4px 0' }}>{fmt(stats.trendData.profitCurrent)} đ</p>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.8rem', color: stats.trendData.profitDiffPct >= 0 ? 'var(--success)' : 'var(--danger)' }}>
+                    <span>{stats.trendData.profitDiffPct >= 0 ? '▲' : '▼'} {Math.abs(stats.trendData.profitDiffPct).toFixed(1)}%</span>
+                    <span style={{ color: 'var(--text-secondary)' }}>so với kỳ trước đó</span>
+                  </div>
+                </div>
+
+                {/* Biên lợi nhuận */}
+                <div style={{ background: 'rgba(0,0,0,0.15)', padding: '12px', borderRadius: '8px', border: '1px solid var(--glass-border)' }}>
+                  <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Biên lợi nhuận ròng</p>
+                  <p style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--primary)', margin: '4px 0' }}>{stats.trendData.profitMargin.toFixed(1)}%</p>
+                  <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Làm 10đ lời {Math.round(stats.trendData.profitMargin / 10)}đ</div>
+                </div>
+              </div>
+
+              <div style={{ background: 'rgba(255,255,255,0.05)', padding: '12px', borderRadius: '8px', borderLeft: '4px solid var(--warning)' }}>
+                <p style={{ fontSize: '0.9rem', color: 'var(--text-primary)', lineHeight: 1.5 }}>
+                  <strong>💡 Nhận xét nhanh: </strong> {stats.trendData.insight}
+                </p>
+              </div>
+            </div>
+          )}
 
           {/* CẢNH BÁO BẢO DƯỠNG & QUỸ */}
           {(stats.needsMaintenance || stats.isFundLow) && (
