@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import RevenueChart from '@/components/RevenueChart';
 
 interface DashboardStats {
   // Tuần này
@@ -358,6 +359,11 @@ export default function ManagementDashboard() {
         // TAB 2: LŨY KẾ & BÁO CÁO
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
           
+          <RevenueChart 
+            defaultStartDate={stats.allTransactions[stats.allTransactions.length - 1]?.transaction_date}
+            defaultEndDate={new Date().toISOString()}
+          />
+
           {/* CẢNH BÁO BẢO DƯỠNG & QUỸ */}
           {(stats.needsMaintenance || stats.isFundLow) && (
             <div className="glass-panel" style={{ borderLeft: '4px solid var(--danger)', background: 'rgba(239,68,68,0.05)' }}>
