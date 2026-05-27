@@ -14,8 +14,8 @@ export default function RevenueChart({ defaultStartDate, defaultEndDate }: Reven
   const [filterMode, setFilterMode] = useState<'period' | 'custom'>('period');
   const [startDate, setStartDate] = useState(defaultStartDate ? defaultStartDate.split('T')[0] : '');
   const [endDate, setEndDate] = useState(defaultEndDate ? defaultEndDate.split('T')[0] : '');
-  const [data, setData] = useState<any[]>([]);
-  const [revenueSources, setRevenueSources] = useState<any[]>([]);
+  const [data, setData] = useState<Record<string, unknown>[]>([]);
+  const [revenueSources, setRevenueSources] = useState<{id: string, name: string, color: string}[]>([]);
   const [loading, setLoading] = useState(true);
   const [hiddenLines, setHiddenLines] = useState<Record<string, boolean>>({});
   const supabase = createClient();
@@ -23,9 +23,11 @@ export default function RevenueChart({ defaultStartDate, defaultEndDate }: Reven
   // Khi default thay đổi từ bên ngoài (có thể do load dữ liệu cha chậm)
   useEffect(() => {
     if (defaultStartDate && filterMode === 'period') {
+      // eslint-disable-next-line react-hooks/exhaustive-deps
       setStartDate(defaultStartDate.split('T')[0]);
     }
     if (defaultEndDate && filterMode === 'period') {
+      // eslint-disable-next-line react-hooks/exhaustive-deps
       setEndDate(defaultEndDate.split('T')[0]);
     }
   }, [defaultStartDate, defaultEndDate, filterMode]);
@@ -68,22 +70,22 @@ export default function RevenueChart({ defaultStartDate, defaultEndDate }: Reven
       const groupedData: Record<string, any> = {};
       
       txRes.data?.forEach(t => {
-        const parsedDate = parseISO(t.transaction_date);
+        const parsedDate = parseISO(t.transaction_date as string);
         const dateKey = format(parsedDate, 'dd/MM');
         const sortKey = format(parsedDate, 'yyyy-MM-dd'); // Format chuẩn để sort
         
         if (!groupedData[dateKey]) {
-          groupedData[dateKey] = { dateStr: dateKey, sortDate: sortKey, Thu: 0, Chi: 0 };
-          sources.forEach((src: any) => {
+          groupedData[dateKey] = { dateStr: dateKey, sortDate: sortKey, Thu: 0, Chi: 0, Khac: 0 };
+          sources.forEach((src: {id: string}) => {
             groupedData[dateKey][src.id] = 0;
           });
         }
         
         if (t.type === 'income') {
           groupedData[dateKey].Thu += t.amount;
-          const isKnownSource = sources.some((s: any) => s.id === t.category);
+          const isKnownSource = sources.some((s: {id: string}) => s.id === t.category);
           if (isKnownSource) {
-            groupedData[dateKey][t.category] += t.amount;
+            groupedData[dateKey][t.category as string] += t.amount;
           }
         }
         if (t.type === 'expense') groupedData[dateKey].Chi += t.amount;
@@ -103,8 +105,9 @@ export default function RevenueChart({ defaultStartDate, defaultEndDate }: Reven
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value);
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const toggleLine = (e: any) => {
-    const { dataKey } = e;
+    const dataKey = String(e.dataKey);
     setHiddenLines(prev => ({
       ...prev,
       [dataKey]: !prev[dataKey]
@@ -187,7 +190,7 @@ export default function RevenueChart({ defaultStartDate, defaultEndDate }: Reven
                 axisLine={false}
               />
               <Tooltip 
-                formatter={(value: any, name: any) => [formatCurrency(Number(value) || 0), name]}
+                formatter={(value: unknown, name: unknown) => [formatCurrency(Number(value) || 0), String(name)]}
                 contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.9)', border: '1px solid var(--glass-border)', borderRadius: '8px', color: 'white' }}
                 itemStyle={{ color: 'white' }}
               />
