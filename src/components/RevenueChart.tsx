@@ -187,7 +187,7 @@ export default function RevenueChart({ defaultStartDate, defaultEndDate }: Reven
                 axisLine={false}
               />
               <Tooltip 
-                formatter={(value: number, name: string) => [formatCurrency(value), name]}
+                formatter={(value: any, name: any) => [formatCurrency(Number(value) || 0), name]}
                 contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.9)', border: '1px solid var(--glass-border)', borderRadius: '8px', color: 'white' }}
                 itemStyle={{ color: 'white' }}
               />
