@@ -427,7 +427,17 @@ export default function ManagementDashboard() {
           />
 
           {/* PHÂN TÍCH XU HƯỚNG */}
-          {stats.trendData && stats.trendData.hasData && (
+          {(!stats.trendData || !stats.trendData.hasData) ? (
+            <div className="glass-panel" style={{ borderLeft: '4px solid var(--glass-border)', background: 'rgba(255,255,255,0.02)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                <span style={{ fontSize: '1.5rem', opacity: 0.5 }}>📉</span>
+                <h3 style={{ fontSize: '1.1rem', color: 'var(--text-secondary)' }}>Phân tích Xu hướng Kinh doanh</h3>
+              </div>
+              <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                <em>Chưa đủ dữ liệu. Hệ thống cần bạn chốt sổ ít nhất 2 kỳ để có thể phân tích so sánh và đưa ra nhận xét.</em>
+              </p>
+            </div>
+          ) : (
             <div className="glass-panel" style={{ borderLeft: '4px solid var(--primary)', background: 'linear-gradient(135deg, rgba(58,123,213,0.05) 0%, rgba(0,210,255,0.05) 100%)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
                 <span style={{ fontSize: '1.5rem' }}>📈</span>
