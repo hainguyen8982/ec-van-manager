@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import RevenueChart from '@/components/RevenueChart';
 
 interface WeekStats {
   totalIncome: number;
@@ -38,6 +39,8 @@ interface WeekStats {
   settlementHistory: any[];
   // Góp quỹ từ quỹ
   fundContributions: number;
+  currentPeriodStart: string;
+  currentPeriodEnd: string;
 }
 
 
@@ -144,6 +147,8 @@ export default function OperationsOverview() {
       cumulativeOperations,
       cumulativeInvestment,
       settlementHistory: allSettlements,
+      currentPeriodStart: startDateObj.toISOString(),
+      currentPeriodEnd: now.toISOString(),
     });
     setLoading(false);
   }, [supabase]);
@@ -261,6 +266,12 @@ export default function OperationsOverview() {
       ) : (
         // TAB 2: LŨY KẾ & BÁO CÁO
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+          {/* BIỂU ĐỒ DOANH THU */}
+          <RevenueChart 
+            defaultStartDate={stats.currentPeriodStart} 
+            defaultEndDate={stats.currentPeriodEnd} 
+          />
+
           {/* QUỸ DỰ PHÒNG (chỉ xem, không chỉnh) */}
           <div className="glass-panel">
             <h3 style={{ fontSize: '1.1rem', marginBottom: '1rem', color: 'var(--warning)' }}>Quỹ Dự phòng xe</h3>
