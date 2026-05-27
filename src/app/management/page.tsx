@@ -548,7 +548,7 @@ export default function ManagementDashboard() {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div>
                     <p style={{ fontWeight: 600, fontSize: '0.95rem', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      🏦 Quỹ Ngân hàng {expandedFund === 'bank' ? '▼' : '▶'}
+                      🏦 Quỹ Ngân hàng
                     </p>
                     <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Trích: +{fmt(stats.bankDeposited)} | Chi: -{fmt(stats.bankSpent)}</p>
                   </div>
@@ -584,7 +584,7 @@ export default function ManagementDashboard() {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div>
                     <p style={{ fontWeight: 600, fontSize: '0.95rem', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      🅿️ Quỹ Bãi xe {expandedFund === 'parking' ? '▼' : '▶'}
+                      🅿️ Quỹ Bãi xe
                     </p>
                     <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Trích: +{fmt(stats.parkingDeposited)} | Chi: -{fmt(stats.parkingSpent)}</p>
                   </div>
@@ -620,7 +620,7 @@ export default function ManagementDashboard() {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div>
                     <p style={{ fontWeight: 600, fontSize: '0.95rem', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      🔧 Quỹ Dự phòng {expandedFund === 'reserve' ? '▼' : '▶'}
+                      🔧 Quỹ Dự phòng
                     </p>
                     <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Trích: +{fmt(stats.reserveDeposited)} | Chi: -{fmt(stats.reserveSpent)}</p>
                   </div>
