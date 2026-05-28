@@ -124,24 +124,27 @@ export default function ExportPDFButton({
             </div>
           </div>
 
-          <div style={{ display: 'flex', gap: '20px' }}>
-            {/* Cột Trái: Thu Nhập */}
-            <div style={{ flex: 1 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '30px' }}>
+            {/* Thu Nhập */}
+            <div>
               <h3 style={{ fontSize: '16px', borderBottom: '1px solid #16a34a', color: '#16a34a', paddingBottom: '5px', marginBottom: '15px' }}>I. BẢNG KÊ DOANH THU</h3>
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
                 <thead>
                   <tr style={{ background: '#f0fdf4' }}>
-                    <th style={{ padding: '8px', border: '1px solid #ddd', textAlign: 'left' }}>Ngày</th>
-                    <th style={{ padding: '8px', border: '1px solid #ddd', textAlign: 'left' }}>Nguồn</th>
-                    <th style={{ padding: '8px', border: '1px solid #ddd', textAlign: 'right' }}>Số tiền</th>
+                    <th style={{ padding: '8px', border: '1px solid #ddd', textAlign: 'left', width: '15%' }}>Ngày</th>
+                    <th style={{ padding: '8px', border: '1px solid #ddd', textAlign: 'left', width: '60%' }}>Nguồn / Ghi chú</th>
+                    <th style={{ padding: '8px', border: '1px solid #ddd', textAlign: 'right', width: '25%' }}>Số tiền</th>
                   </tr>
                 </thead>
                 <tbody>
                   {incomes.length > 0 ? incomes.map((t, i) => (
                     <tr key={i}>
-                      <td style={{ padding: '6px 8px', border: '1px solid #ddd' }}>{new Date(t.transaction_date).toLocaleDateString('vi-VN')}</td>
-                      <td style={{ padding: '6px 8px', border: '1px solid #ddd' }}>{getCategoryName(t.category, true)}</td>
-                      <td style={{ padding: '6px 8px', border: '1px solid #ddd', textAlign: 'right', fontWeight: 'bold' }}>{fmt(t.amount)}</td>
+                      <td style={{ padding: '6px 8px', border: '1px solid #ddd', verticalAlign: 'top' }}>{new Date(t.transaction_date).toLocaleDateString('vi-VN')}</td>
+                      <td style={{ padding: '6px 8px', border: '1px solid #ddd', verticalAlign: 'top' }}>
+                        <strong>{getCategoryName(t.category, true)}</strong>
+                        {t.note && <span style={{ color: '#555', display: 'block', marginTop: '2px' }}>{t.note}</span>}
+                      </td>
+                      <td style={{ padding: '6px 8px', border: '1px solid #ddd', textAlign: 'right', fontWeight: 'bold', verticalAlign: 'top' }}>{fmt(t.amount)}</td>
                     </tr>
                   )) : (
                     <tr><td colSpan={3} style={{ padding: '8px', border: '1px solid #ddd', textAlign: 'center' }}>Không có phát sinh</td></tr>
@@ -150,23 +153,26 @@ export default function ExportPDFButton({
               </table>
             </div>
 
-            {/* Cột Phải: Chi Phí */}
-            <div style={{ flex: 1 }}>
+            {/* Chi Phí */}
+            <div>
               <h3 style={{ fontSize: '16px', borderBottom: '1px solid #dc2626', color: '#dc2626', paddingBottom: '5px', marginBottom: '15px' }}>II. BẢNG KÊ CHI PHÍ</h3>
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
                 <thead>
                   <tr style={{ background: '#fef2f2' }}>
-                    <th style={{ padding: '8px', border: '1px solid #ddd', textAlign: 'left' }}>Ngày</th>
-                    <th style={{ padding: '8px', border: '1px solid #ddd', textAlign: 'left' }}>Mục chi</th>
-                    <th style={{ padding: '8px', border: '1px solid #ddd', textAlign: 'right' }}>Số tiền</th>
+                    <th style={{ padding: '8px', border: '1px solid #ddd', textAlign: 'left', width: '15%' }}>Ngày</th>
+                    <th style={{ padding: '8px', border: '1px solid #ddd', textAlign: 'left', width: '60%' }}>Mục chi / Ghi chú</th>
+                    <th style={{ padding: '8px', border: '1px solid #ddd', textAlign: 'right', width: '25%' }}>Số tiền</th>
                   </tr>
                 </thead>
                 <tbody>
                   {expenses.length > 0 ? expenses.map((t, i) => (
                     <tr key={i}>
-                      <td style={{ padding: '6px 8px', border: '1px solid #ddd' }}>{new Date(t.transaction_date).toLocaleDateString('vi-VN')}</td>
-                      <td style={{ padding: '6px 8px', border: '1px solid #ddd' }}>{getCategoryName(t.category, false)}</td>
-                      <td style={{ padding: '6px 8px', border: '1px solid #ddd', textAlign: 'right', fontWeight: 'bold' }}>{fmt(t.amount)}</td>
+                      <td style={{ padding: '6px 8px', border: '1px solid #ddd', verticalAlign: 'top' }}>{new Date(t.transaction_date).toLocaleDateString('vi-VN')}</td>
+                      <td style={{ padding: '6px 8px', border: '1px solid #ddd', verticalAlign: 'top' }}>
+                        <strong>{getCategoryName(t.category, false)}</strong>
+                        {t.note && <span style={{ color: '#555', display: 'block', marginTop: '2px' }}>{t.note}</span>}
+                      </td>
+                      <td style={{ padding: '6px 8px', border: '1px solid #ddd', textAlign: 'right', fontWeight: 'bold', verticalAlign: 'top' }}>{fmt(t.amount)}</td>
                     </tr>
                   )) : (
                     <tr><td colSpan={3} style={{ padding: '8px', border: '1px solid #ddd', textAlign: 'center' }}>Không có phát sinh</td></tr>
@@ -181,9 +187,12 @@ export default function ExportPDFButton({
                     <tbody>
                       {funds.map((t, i) => (
                         <tr key={i}>
-                          <td style={{ padding: '6px 8px', border: '1px solid #ddd' }}>{new Date(t.transaction_date).toLocaleDateString('vi-VN')}</td>
-                          <td style={{ padding: '6px 8px', border: '1px solid #ddd' }}>{getCategoryName(t.category, false)}</td>
-                          <td style={{ padding: '6px 8px', border: '1px solid #ddd', textAlign: 'right', fontWeight: 'bold', color: '#b45309' }}>{fmt(t.amount)}</td>
+                          <td style={{ padding: '6px 8px', border: '1px solid #ddd', width: '15%', verticalAlign: 'top' }}>{new Date(t.transaction_date).toLocaleDateString('vi-VN')}</td>
+                          <td style={{ padding: '6px 8px', border: '1px solid #ddd', width: '60%', verticalAlign: 'top' }}>
+                            <strong>{getCategoryName(t.category, false)}</strong>
+                            {t.note && <span style={{ color: '#555', display: 'block', marginTop: '2px' }}>{t.note}</span>}
+                          </td>
+                          <td style={{ padding: '6px 8px', border: '1px solid #ddd', textAlign: 'right', fontWeight: 'bold', color: '#b45309', width: '25%', verticalAlign: 'top' }}>{fmt(t.amount)}</td>
                         </tr>
                       ))}
                     </tbody>
