@@ -37,7 +37,7 @@ export async function sendTelegramNotification(message: string) {
 import { createClient } from '@/lib/supabase/server';
 
 export async function cleanTestData() {
-  const supabase = createClient();
+  const supabase = await createClient();
   
   // Xóa tất cả các giao dịch có chứa chữ [TEST] trong ghi chú
   const { error: txError } = await supabase.from('transactions')
