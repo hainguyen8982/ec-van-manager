@@ -108,7 +108,7 @@ export default function ExpensePage() {
       
       // Send Telegram notification
       const msg = `💸 <b>[CHI PHÍ MỚI]</b>\nLoại chi phí: <b>${selectedCat?.icon || ''} ${selectedCat?.name || category}</b>\nSố tiền: <b>${amount} đ</b>\n${isFundSpent ? '⚠️ <i>Lấy từ Quỹ dùng chung</i>\n' : ''}${note ? `Ghi chú: <i>${note}</i>\n` : ''}${receipt_url ? `<a href="${receipt_url}">[Xem ảnh chứng từ]</a>\n` : ''}Thời gian: ${new Date().toLocaleString('vi-VN')}`;
-      sendTelegramNotification(msg);
+      await sendTelegramNotification(msg);
 
       setAmount('');
       setNote('');

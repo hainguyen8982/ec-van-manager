@@ -33,7 +33,7 @@ export default function FundPage() {
       // Send Telegram notification
       const msgText = isWithdraw ? '🔧 <b>[CHI TỪ QUỸ DỰ PHÒNG]</b>' : '💰 <b>[NẠP QUỸ DỰ PHÒNG]</b>';
       const tgMsg = `${msgText}\nSố tiền: <b>${amount} đ</b>\n${note ? `Ghi chú: <i>${note}</i>\n` : ''}Thời gian: ${new Date().toLocaleString('vi-VN')}`;
-      sendTelegramNotification(tgMsg);
+      await sendTelegramNotification(tgMsg);
 
       setAmount(''); 
       setNote(''); 

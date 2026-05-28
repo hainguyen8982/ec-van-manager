@@ -83,7 +83,7 @@ export default function IncomePage() {
 
       // Send Telegram notification
       const msg = `💰 <b>[THU NHẬP MỚI]</b>\nNguồn: <b>${sourceName}</b>\nSố tiền: <b>${amount} đ</b>\n${note ? `Ghi chú: <i>${note}</i>\n` : ''}Thời gian: ${new Date().toLocaleString('vi-VN')}`;
-      sendTelegramNotification(msg);
+      await sendTelegramNotification(msg);
     }
     setLoading(false);
   };

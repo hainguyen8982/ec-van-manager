@@ -405,7 +405,7 @@ const reserveBalance = reserveWeekly - reserveSpent;
                 
                 // Send Telegram Notification
                 const msg = `🧾 <b>[CHỐT SỔ THÀNH CÔNG]</b>\nKỳ: ${new Date(stats.startDate).toLocaleDateString('vi-VN')} - ${new Date(stats.endDate).toLocaleDateString('vi-VN')} (${stats.daysCount} ngày)\n\nLợi nhuận ròng: <b>${stats.netProfit >= 0 ? '+' : ''}${fmt(stats.netProfit)} đ</b>\n💰 <b>TỔNG CHUYỂN GÓC ĐẦU TƯ: ${fmt(stats.ownerAmount + stats.reserveWeekly)} đ</b>\n<i>(Bao gồm Lãi ${fmt(stats.ownerAmount)} đ + Quỹ dự phòng ${fmt(stats.reserveWeekly)} đ)</i>\n\nHãy vào phần Quản lý để xem Báo cáo chi tiết.`;
-                sendTelegramNotification(msg);
+                await sendTelegramNotification(msg);
               }
             }}
           >
