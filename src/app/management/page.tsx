@@ -85,6 +85,7 @@ export default function ManagementDashboard() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'week' | 'alltime'>('week');
   const [expandedFund, setExpandedFund] = useState<string | null>(null);
+  const [expandedApp, setExpandedApp] = useState<string | null>(null);
   const supabase = createClient();
 
   const [expandedSettlementId, setExpandedSettlementId] = useState<string | null>(null);
@@ -329,11 +330,20 @@ export default function ManagementDashboard() {
   );
   if (!stats) return null;
 
-  const renderAppCard = (name: string, income: number, count: number, totalIncome: number, color: string, isBest: boolean = false) => {
+  const renderAppCard = (appId: string, name: string, income: number, count: number, totalIncome: number, color: string, isBest: boolean = false) => {
     const pct = totalIncome > 0 ? Math.round((income / totalIncome) * 100) : 0;
     const arpo = count > 0 ? Math.round(income / count) : 0;
+    
+    // Lấy chi tiết giao dịch
+    const appTxs = stats.allTransactions.filter(t => t.type === 'income' && (appId === 'other' ? !['grab', 'ahamove', 'lalamove'].includes(t.category) : t.category === appId));
+    appTxs.sort((a, b) => new Date(b.created_at || b.transaction_date).getTime() - new Date(a.created_at || a.transaction_date).getTime());
+
     return (
-      <div style={{ padding: '12px', background: 'rgba(255,255,255,0.02)', borderRadius: 'var(--radius-sm)', border: `1px solid ${isBest ? 'var(--warning)' : color + '33'}`, position: 'relative', overflow: 'hidden' }}>
+      <div 
+        key={appId}
+        onClick={() => setExpandedApp(expandedApp === appId ? null : appId)}
+        style={{ cursor: 'pointer', padding: '12px', background: 'rgba(255,255,255,0.02)', borderRadius: 'var(--radius-sm)', border: `1px solid ${isBest ? 'var(--warning)' : color + '33'}`, position: 'relative', overflow: 'hidden' }}
+      >
         <div style={{ position: 'absolute', top: 0, left: 0, width: '4px', height: '100%', background: isBest ? 'var(--warning)' : color }} />
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
           <strong style={{ color: color }}>{name}</strong>
@@ -343,17 +353,34 @@ export default function ManagementDashboard() {
           <span style={{ color: 'var(--text-secondary)' }}>Tổng thu:</span>
           <strong style={{ color: 'var(--text-primary)' }}>{fmt(income)} đ</strong>
         </div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '0.85rem', paddingBottom: '8px', borderBottom: '1px dashed var(--glass-border)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '0.85rem', paddingBottom: '8px', borderBottom: expandedApp === appId ? 'none' : '1px dashed var(--glass-border)' }}>
           <span style={{ color: 'var(--text-secondary)' }}>Số đơn:</span>
           <span>{count} đơn</span>
         </div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: expandedApp === appId ? '8px' : '0', borderBottom: expandedApp === appId ? '1px dashed var(--glass-border)' : 'none' }}>
           <span style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>Bình quân/đơn:</span>
           <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
             {isBest && <span style={{ fontSize: '0.75rem', background: 'rgba(245, 158, 11, 0.1)', color: 'var(--warning)', padding: '2px 6px', borderRadius: '4px', fontWeight: 600 }}>🌟 Tốt nhất</span>}
             <strong style={{ color: 'var(--success)', fontSize: '1rem' }}>{fmt(arpo)} đ</strong>
           </div>
         </div>
+
+        {expandedApp === appId && (
+          <div style={{ marginTop: '0.5rem', paddingTop: '0.5rem' }}>
+            <p style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>Lịch sử nhập liệu:</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '200px', overflowY: 'auto', paddingRight: '4px' }}>
+              {appTxs.length > 0 ? appTxs.map((item, idx) => (
+                <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', padding: '6px 8px', background: 'rgba(0,0,0,0.15)', borderRadius: '4px' }}>
+                  <div>
+                    <span style={{ color: 'var(--text-primary)', fontWeight: 500 }}>{new Date(item.transaction_date).toLocaleDateString('vi-VN')}</span>
+                    {item.note && <p style={{ color: 'var(--text-secondary)', fontSize: '0.75rem', marginTop: '2px' }}>{item.note}</p>}
+                  </div>
+                  <strong style={{ color: 'var(--success)' }}>+{fmt(item.amount)}</strong>
+                </div>
+              )) : <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Chưa có doanh thu.</p>}
+            </div>
+          </div>
+        )}
       </div>
     );
   };
@@ -674,10 +701,10 @@ export default function ManagementDashboard() {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '0.75rem' }}>
               {(() => {
                 const apps = [
-                  { name: 'Grab', income: stats.allTimeGrab, count: stats.allTimeGrabOrders, color: '#00b14f' },
-                  { name: 'Ahamove', income: stats.allTimeAhamove, count: stats.allTimeAhamoveOrders, color: '#ff6b00' },
-                  { name: 'Lalamove', income: stats.allTimeLalamove, count: stats.allTimeLalamoveOrders, color: '#ff8b00' },
-                  { name: 'Ứng dụng khác', income: stats.allTimeOther, count: stats.allTimeOtherOrders, color: 'var(--primary)' }
+                  { id: 'grab', name: 'Grab', income: stats.allTimeGrab, count: stats.allTimeGrabOrders, color: '#00b14f' },
+                  { id: 'ahamove', name: 'Ahamove', income: stats.allTimeAhamove, count: stats.allTimeAhamoveOrders, color: '#ff6b00' },
+                  { id: 'lalamove', name: 'Lalamove', income: stats.allTimeLalamove, count: stats.allTimeLalamoveOrders, color: '#ff8b00' },
+                  { id: 'other', name: 'Ứng dụng khác', income: stats.allTimeOther, count: stats.allTimeOtherOrders, color: 'var(--primary)' }
                 ];
                 
                 const validApps = apps.filter(a => a.count > 0 || a.name !== 'Ứng dụng khác');
@@ -685,6 +712,7 @@ export default function ManagementDashboard() {
                 const maxArpo = Math.max(...arpos);
                 
                 return validApps.map(a => renderAppCard(
+                  a.id,
                   a.name, 
                   a.income, 
                   a.count, 
