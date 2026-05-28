@@ -40,9 +40,10 @@ export default function RevenueChart({ defaultStartDate, defaultEndDate }: Reven
       const sDate = filterMode === 'period' ? defaultStartDate : startDate;
       const eDate = filterMode === 'period' ? defaultEndDate : endDate;
 
-      // Make sure eDate includes the whole day
-      const endOfDayStr = new Date(new Date(eDate).setHours(23, 59, 59, 999)).toISOString();
-      const startOfDayStr = new Date(new Date(sDate).setHours(0, 0, 0, 0)).toISOString();
+      // Format thành YYYY-MM-DD để query chính xác vào cột transaction_date (kiểu Date)
+      // Cách này giúp tránh lỗi múi giờ (Timezone) khi dùng toISOString() khiến ngày bị lùi về hôm trước
+      const startOfDayStr = sDate.split('T')[0];
+      const endOfDayStr = eDate.split('T')[0];
 
       const [txRes, settingsRes] = await Promise.all([
         supabase
