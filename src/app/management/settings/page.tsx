@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import { cleanTestData } from '@/app/actions';
 
 export default function SettingsPage() {
   const [settingsId, setSettingsId] = useState<string | null>(null);
@@ -546,6 +547,33 @@ export default function SettingsPage() {
             {saving ? 'Đang lưu...' : 'Lưu Cấu Hình'}
           </button>
         </form>
+      </div>
+      
+      {/* KHU VỰC DỌN DẸP DỮ LIỆU TEST */}
+      <div className="glass-panel" style={{ marginTop: '2rem', border: '1px solid var(--danger)' }}>
+        <h3 style={{ color: 'var(--danger)', fontSize: '1.1rem', marginBottom: '0.5rem' }}>Dọn dẹp Dữ liệu Test</h3>
+        <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '1rem', lineHeight: 1.5 }}>
+          Công cụ này sẽ xóa sạch các khoản Thu, Chi, Quỹ có chứa chữ <strong>[TEST]</strong> trong Ghi chú. 
+          Giúp bạn thoải mái nhập số liệu chạy thử mà không sợ làm bẩn hệ thống.
+        </p>
+        <button 
+          type="button" 
+          className="btn btn-danger"
+          style={{ width: '100%', padding: '12px' }}
+          onClick={async () => {
+            if (confirm('Bạn có chắc chắn muốn xóa toàn bộ các dữ liệu có gắn thẻ [TEST] không? Hành động này không thể hoàn tác!')) {
+              const res = await cleanTestData();
+              if (res.success) {
+                alert('✅ Đã dọn dẹp sạch sẽ toàn bộ dữ liệu Test!');
+                window.location.reload();
+              } else {
+                alert('❌ Lỗi: ' + res.error);
+              }
+            }
+          }}
+        >
+          🗑️ Dọn dẹp ngay
+        </button>
       </div>
     </div>
   );

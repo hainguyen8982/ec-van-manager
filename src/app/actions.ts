@@ -33,3 +33,23 @@ export async function sendTelegramNotification(message: string) {
     return { success: false, error: 'Network error' };
   }
 }
+
+import { createClient } from '@/lib/supabase/server';
+
+export async function cleanTestData() {
+  const supabase = createClient();
+  
+  // Xóa tất cả các giao dịch có chứa chữ [TEST] trong ghi chú
+  const { error: txError } = await supabase.from('transactions')
+    .delete()
+    .ilike('note', '%[TEST]%');
+    
+  if (txError) {
+    return { success: false, error: txError.message };
+  }
+  
+  // Tùy chọn: Chúng ta cũng có thể tìm các weekly_settlements không có giao dịch nào và xóa chúng,
+  // nhưng hiện tại xóa transaction là đủ để làm sạch biểu đồ.
+  
+  return { success: true };
+}
