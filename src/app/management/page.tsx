@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import RevenueChart from '@/components/RevenueChart';
+import ExportPDFButton from '@/components/ExportPDFButton';
 
 interface DashboardStats {
   // Tuần này
@@ -788,9 +789,21 @@ export default function ManagementDashboard() {
                               {item.net_profit >= 0 ? '+' : ''}{fmt(item.net_profit)}
                             </td>
                             <td style={{ padding: '8px 4px', textAlign: 'center' }}>
-                              <button onClick={() => setExpandedSettlementId(isExpanded ? null : item.id)} className="btn btn-glass" style={{ padding: '4px 8px', fontSize: '0.75rem' }}>
-                                {isExpanded ? 'Đóng' : 'Xem'}
-                              </button>
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'center' }}>
+                                <button onClick={() => setExpandedSettlementId(isExpanded ? null : item.id)} className="btn btn-glass" style={{ padding: '4px 8px', fontSize: '0.75rem', width: '100%' }}>
+                                  {isExpanded ? 'Đóng' : 'Xem'}
+                                </button>
+                                {isExpanded && (
+                                  <ExportPDFButton 
+                                    settlement={item}
+                                    incomes={incomes}
+                                    expenses={expenses}
+                                    funds={funds}
+                                    revenueSources={stats.revenueSources}
+                                    expenseCategories={stats.expenseCategories}
+                                  />
+                                )}
+                              </div>
                             </td>
                           </tr>
                           {isExpanded && (
