@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import { sendTelegramNotification } from '@/app/actions';
 
 export default function IncomePage() {
   const [amount, setAmount] = useState('');
@@ -79,6 +80,10 @@ export default function IncomePage() {
       setSuccess(`✅ Đã lưu doanh thu ${amount} đ từ ${sourceName}`);
       setAmount('');
       setNote('');
+
+      // Send Telegram notification
+      const msg = `💰 <b>[THU NHẬP MỚI]</b>\nNguồn: <b>${sourceName}</b>\nSố tiền: <b>${amount} đ</b>\n${note ? `Ghi chú: <i>${note}</i>\n` : ''}Thời gian: ${new Date().toLocaleString('vi-VN')}`;
+      sendTelegramNotification(msg);
     }
     setLoading(false);
   };

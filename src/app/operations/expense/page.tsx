@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import { sendTelegramNotification } from '@/app/actions';
 
 export default function ExpensePage() {
   const [amount, setAmount] = useState('');
@@ -104,6 +105,11 @@ export default function ExpensePage() {
     } else {
       const selectedCat = categories.find(c => c.id === category);
       setSuccess(`✅ Đã lưu chi phí ${amount} đ — ${selectedCat?.icon} ${selectedCat?.name || category}`);
+      
+      // Send Telegram notification
+      const msg = `💸 <b>[CHI PHÍ MỚI]</b>\nLoại chi phí: <b>${selectedCat?.icon || ''} ${selectedCat?.name || category}</b>\nSố tiền: <b>${amount} đ</b>\n${isFundSpent ? '⚠️ <i>Lấy từ Quỹ dùng chung</i>\n' : ''}${note ? `Ghi chú: <i>${note}</i>\n` : ''}${receipt_url ? `<a href="${receipt_url}">[Xem ảnh chứng từ]</a>\n` : ''}Thời gian: ${new Date().toLocaleString('vi-VN')}`;
+      sendTelegramNotification(msg);
+
       setAmount('');
       setNote('');
       setIsFundSpent(false);

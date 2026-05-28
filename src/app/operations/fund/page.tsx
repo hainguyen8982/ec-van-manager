@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import { sendTelegramNotification } from '@/app/actions';
 
 export default function FundPage() {
   const [amount, setAmount] = useState('');
@@ -28,7 +29,16 @@ export default function FundPage() {
     });
     setLoading(false);
     setMsg(error ? `❌ ${error.message}` : '✅ Lưu giao dịch thành công');
-    if (!error) { setAmount(''); setNote(''); setIsWithdraw(false); }
+    if (!error) { 
+      // Send Telegram notification
+      const msgText = isWithdraw ? '🔧 <b>[CHI TỪ QUỸ DỰ PHÒNG]</b>' : '💰 <b>[NẠP QUỸ DỰ PHÒNG]</b>';
+      const tgMsg = `${msgText}\nSố tiền: <b>${amount} đ</b>\n${note ? `Ghi chú: <i>${note}</i>\n` : ''}Thời gian: ${new Date().toLocaleString('vi-VN')}`;
+      sendTelegramNotification(tgMsg);
+
+      setAmount(''); 
+      setNote(''); 
+      setIsWithdraw(false); 
+    }
   };
 
   return (

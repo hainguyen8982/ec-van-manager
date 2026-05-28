@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import { sendTelegramNotification } from '@/app/actions';
 
 interface WeekStats {
   totalIncome: number;
@@ -391,19 +392,23 @@ const reserveBalance = reserveWeekly - reserveSpent;
               return;
             }
 
-            if (newSettlement) {
-              // Update all unsettled transactions to link to this settlement
-              const txIds = stats.transactions.map(t => t.id);
-              if (txIds.length > 0) {
-                const { error: txError } = await supabase.from('transactions').update({ settlement_id: newSettlement.id }).in('id', txIds);
-                if (txError) {
-                  alert('Cảnh báo: Đã tạo bảng chốt sổ nhưng lỗi khi cập nhật giao dịch.');
+              if (newSettlement) {
+                // Update all unsettled transactions to link to this settlement
+                const txIds = stats.transactions.map(t => t.id);
+                if (txIds.length > 0) {
+                  const { error: txError } = await supabase.from('transactions').update({ settlement_id: newSettlement.id }).in('id', txIds);
+                  if (txError) {
+                    alert('Cảnh báo: Đã tạo bảng chốt sổ nhưng lỗi khi cập nhật giao dịch.');
+                  }
                 }
+                setConfirmed(true);
+                
+                // Send Telegram Notification
+                const msg = `🧾 <b>[CHỐT SỔ THÀNH CÔNG]</b>\nKỳ: ${new Date(stats.startDate).toLocaleDateString('vi-VN')} - ${new Date(stats.endDate).toLocaleDateString('vi-VN')} (${stats.daysCount} ngày)\n\nLợi nhuận ròng: <b>${stats.netProfit >= 0 ? '+' : ''}${fmt(stats.netProfit)} đ</b>\n💰 <b>TỔNG CHUYỂN GÓC ĐẦU TƯ: ${fmt(stats.ownerAmount + stats.reserveWeekly)} đ</b>\n<i>(Bao gồm Lãi ${fmt(stats.ownerAmount)} đ + Quỹ dự phòng ${fmt(stats.reserveWeekly)} đ)</i>\n\nHãy vào phần Quản lý để xem Báo cáo chi tiết.`;
+                sendTelegramNotification(msg);
               }
-              setConfirmed(true);
-            }
-          }}
-        >
+            }}
+          >
           Xác nhận Chốt sổ
         </button>
       </div>
