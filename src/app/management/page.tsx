@@ -789,8 +789,8 @@ export default function ManagementDashboard() {
                               {item.net_profit >= 0 ? '+' : ''}{fmt(item.net_profit)}
                             </td>
                             <td style={{ padding: '8px 4px', textAlign: 'center' }}>
-                              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'center' }}>
-                                <button onClick={() => setExpandedSettlementId(isExpanded ? null : item.id)} className="btn btn-glass" style={{ padding: '4px 8px', fontSize: '0.75rem', width: '100%' }}>
+                              <div style={{ display: 'flex', flexDirection: 'row', gap: '4px', justifyContent: 'center' }}>
+                                <button onClick={() => setExpandedSettlementId(isExpanded ? null : item.id)} className="btn btn-glass" style={{ padding: '4px 8px', fontSize: '0.75rem', whiteSpace: 'nowrap' }}>
                                   {isExpanded ? 'Đóng' : 'Xem'}
                                 </button>
                                 {isExpanded && (
