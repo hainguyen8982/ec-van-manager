@@ -160,9 +160,14 @@ export default function SettingsPage() {
         .eq('id', settingsId);
       saveError = error;
     } else {
-      setError(`❌ Lỗi: Không tìm thấy ID cấu hình hệ thống.`);
-      setSaving(false);
-      return;
+      const { data, error } = await supabase
+        .from('settings')
+        .insert(payload)
+        .select();
+      saveError = error;
+      if (data && data[0]) {
+        setSettingsId(data[0].id);
+      }
     }
 
     if (saveError) {
