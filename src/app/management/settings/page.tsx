@@ -1,6 +1,21 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
+
+const EMOJI_LIBRARY = [
+  {
+    category: 'Phương tiện & Di chuyển',
+    emojis: ['⚡', '🔋', '🔌', '🚐', '🚗', '🚙', '🚚', '🛵', '🚲', '🛣️', '🅿️', '🔧', '🛠️', '🧼', '🧽', '⛽', '🚨', '🎫', '🗺️', '📍']
+  },
+  {
+    category: 'Tài chính & Hành chính',
+    emojis: ['🏦', '💳', '💵', '💰', '💸', '📈', '📊', '📄', '📝', '📁', '💼', '⚙️', '⚖️', '🏢']
+  },
+  {
+    category: 'Sinh hoạt & Khác',
+    emojis: ['☕', '🍽️', '🥤', '🍕', '🏪', '🛒', '📦', '🏠', '📞', '💬', '👤', '👥', '🩹', '🩺', '📢', '🔒']
+  }
+];
 import { createClient } from '@/lib/supabase/client';
 import { cleanTestData } from '@/app/actions';
 
@@ -34,6 +49,8 @@ export default function SettingsPage() {
   const [expId, setExpId] = useState('');
   const [expIcon, setExpIcon] = useState('⚡');
   const [expFund, setExpFund] = useState(false);
+  const [showIconPicker, setShowIconPicker] = useState(false);
+  const pickerRef = useRef<HTMLDivElement>(null);
 
   const supabase = createClient();
 
@@ -100,6 +117,18 @@ export default function SettingsPage() {
   }, [supabase]);
 
   useEffect(() => { loadSettings(); }, [loadSettings]);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (pickerRef.current && !pickerRef.current.contains(event.target as Node)) {
+        setShowIconPicker(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -415,6 +444,7 @@ export default function SettingsPage() {
                     setExpId(cat.id);
                     setExpIcon(cat.icon);
                     setExpFund(cat.isFundEligible);
+                    setShowIconPicker(false);
                   }}
                 >✏️ Sửa</button>
                 <button
@@ -437,17 +467,99 @@ export default function SettingsPage() {
               {expEditingIndex !== null ? `✏️ Sửa: ${expenseCategories[expEditingIndex]?.name}` : '➕ Thêm Danh mục mới'}
             </p>
             <div style={{ display: 'grid', gap: '0.5rem' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr 1fr', gap: '0.5rem' }}>
-                <div>
+              <div style={{ display: 'grid', gridTemplateColumns: '60px 1fr 1fr', gap: '0.5rem', position: 'relative' }}>
+                <div ref={pickerRef} style={{ position: 'relative' }}>
                   <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Icon</label>
-                  <input
-                    type="text"
+                  <button
+                    type="button"
                     className="input-field"
-                    style={{ fontSize: '1rem', padding: '8px', width: '48px', textAlign: 'center' }}
-                    placeholder="⚡"
-                    value={expIcon}
-                    onChange={e => setExpIcon(e.target.value)}
-                  />
+                    style={{ fontSize: '1.25rem', padding: '0', height: '42px', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', background: 'rgba(0, 0, 0, 0.2)', border: '1px solid var(--glass-border)', borderRadius: 'var(--radius-sm)' }}
+                    onClick={() => setShowIconPicker(!showIconPicker)}
+                    title="Chọn icon từ thư viện"
+                  >
+                    {expIcon}
+                  </button>
+                  {showIconPicker && (
+                    <div style={{
+                      position: 'absolute',
+                      top: '50px',
+                      left: '0',
+                      zIndex: 10,
+                      width: '280px',
+                      background: 'rgba(15, 23, 42, 0.95)',
+                      backdropFilter: 'blur(20px)',
+                      border: '1px solid var(--glass-border-hover)',
+                      borderRadius: 'var(--radius-sm)',
+                      boxShadow: 'var(--glass-shadow)',
+                      padding: '12px',
+                    }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', borderBottom: '1px solid var(--glass-border)', paddingBottom: '6px' }}>
+                        <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--primary)' }}>Thư viện Icon</span>
+                        <button
+                          type="button"
+                          style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '0.8rem' }}
+                          onClick={() => setShowIconPicker(false)}
+                        >
+                          ✕
+                        </button>
+                      </div>
+                      
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '200px', overflowY: 'auto' }}>
+                        {EMOJI_LIBRARY.map((group, gIdx) => (
+                          <div key={gIdx}>
+                            <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                              {group.category}
+                            </div>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '4px' }}>
+                              {group.emojis.map((emoji) => (
+                                <button
+                                  key={emoji}
+                                  type="button"
+                                  style={{
+                                    fontSize: '1.2rem',
+                                    padding: '4px',
+                                    background: expIcon === emoji ? 'rgba(0, 210, 255, 0.2)' : 'transparent',
+                                    border: expIcon === emoji ? '1px solid var(--primary)' : '1px solid transparent',
+                                    borderRadius: '4px',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center'
+                                  }}
+                                  onClick={() => {
+                                    setExpIcon(emoji);
+                                    setShowIconPicker(false);
+                                  }}
+                                  onMouseEnter={(e) => {
+                                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
+                                  }}
+                                  onMouseLeave={(e) => {
+                                    e.currentTarget.style.background = expIcon === emoji ? 'rgba(0, 210, 255, 0.2)' : 'transparent';
+                                  }}
+                                >
+                                  {emoji}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+
+                      <div style={{ marginTop: '8px', borderTop: '1px solid var(--glass-border)', paddingTop: '8px' }}>
+                        <label style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Hoặc nhập emoji khác:</label>
+                        <input
+                          type="text"
+                          className="input-field"
+                          style={{ fontSize: '0.9rem', padding: '4px 8px', height: '30px', textAlign: 'center' }}
+                          value={expIcon}
+                          maxLength={2}
+                          onChange={(e) => setExpIcon(e.target.value)}
+                          placeholder="Nhập..."
+                        />
+                      </div>
+                    </div>
+                  )}
                 </div>
                 <div>
                   <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Tên hiển thị</label>
@@ -507,6 +619,7 @@ export default function SettingsPage() {
                     setExpId('');
                     setExpIcon('⚡');
                     setExpFund(false);
+                    setShowIconPicker(false);
                   }}
                 >
                   {expEditingIndex !== null ? 'Cập nhật' : 'Thêm Danh mục'}
@@ -522,6 +635,7 @@ export default function SettingsPage() {
                       setExpId('');
                       setExpIcon('⚡');
                       setExpFund(false);
+                      setShowIconPicker(false);
                     }}
                   >Hủy</button>
                 )}
