@@ -26,8 +26,15 @@ export default function IncomePage() {
           { id: 'ahamove', name: 'Ahamove', color: '#ff6b00' },
           { id: 'lalamove', name: 'Lalamove', color: '#ff8b00' }
         ]);
+        setSource('grab');
       } else {
         setSources(loadedSources);
+        if (loadedSources.length > 0) {
+          const hasDefault = loadedSources.some((s: { id: string }) => s.id === 'grab');
+          if (!hasDefault) {
+            setSource(loadedSources[0].id);
+          }
+        }
       }
       setLoadingSources(false);
     };

@@ -32,8 +32,15 @@ export default function ExpensePage() {
           { id: 'repair', name: 'Sửa chữa', icon: '🔧', isFundEligible: true },
           { id: 'bank', name: 'Ngân hàng', icon: '🏦', isFundEligible: true }
         ]);
+        setCategory('charge');
       } else {
         setCategories(loadedCategories);
+        if (loadedCategories.length > 0) {
+          const hasDefault = loadedCategories.some((c: { id: string }) => c.id === 'charge');
+          if (!hasDefault) {
+            setCategory(loadedCategories[0].id);
+          }
+        }
       }
       setLoadingCategories(false);
     };
