@@ -148,9 +148,19 @@ export default function ManagementDashboard() {
 
     // --- 4. TÍNH TOÁN CÁC QUỸ CỐ ĐỊNH (NGÂN HÀNG, BÃI XE, DỰ PHÒNG) ---
     // Tổng trích từ các tuần chốt sổ
-    const bankDeposited = allSettlements.reduce((s, x) => s + Number(x.bank_loan_weekly || 0), 0);
-    const parkingDeposited = allSettlements.reduce((s, x) => s + Number(x.parking_weekly || 0), 0);
-    const reserveDeposited = allSettlements.reduce((s, x) => s + Number(x.reserve_weekly || 0), 0);
+    const bankDepositedConfirmed = allSettlements.reduce((s, x) => s + Number(x.bank_loan_weekly || 0), 0);
+    const parkingDepositedConfirmed = allSettlements.reduce((s, x) => s + Number(x.parking_weekly || 0), 0);
+    const reserveDepositedConfirmed = allSettlements.reduce((s, x) => s + Number(x.reserve_weekly || 0), 0);
+
+    // Tính trích lập tạm tính của kỳ hiện tại (chưa chốt sổ) để cộng vào quỹ thời gian thực
+    const currentPeriodBankAccrued = settings && settings.is_bank_loan_active !== false ? Math.round((settings.bank_loan_monthly / 30) * days) : 0;
+    const currentPeriodParkingAccrued = settings && settings.is_parking_active !== false ? Math.round((settings.parking_monthly / 30) * days) : 0;
+    const currentPeriodReserveAccrued = settings && settings.is_reserve_active !== false ? Math.round((settings.reserve_monthly / 30) * days) : 0;
+
+    // Tổng trích lũy thời gian thực (đã chốt + tạm tính kỳ này)
+    const bankDeposited = bankDepositedConfirmed + currentPeriodBankAccrued;
+    const parkingDeposited = parkingDepositedConfirmed + currentPeriodParkingAccrued;
+    const reserveDeposited = reserveDepositedConfirmed + currentPeriodReserveAccrued;
 
     // Tổng chi từ các quỹ
     const fundSpentTxs = allTransactions.filter(t => t.type === 'expense' && t.is_fund_spent);
@@ -165,7 +175,7 @@ export default function ManagementDashboard() {
     const reserveBalance = reserveDeposited - reserveSpent;
 
     // Lịch sử chi tiết từng quỹ
-    const buildHistory = (cat: string, depField: string) => {
+    const buildHistory = (cat: string, depField: string, currentAccrued: number) => {
       const deposits = allSettlements
         .filter(x => Number(x[depField] || 0) > 0)
         .map(x => ({
@@ -175,6 +185,16 @@ export default function ManagementDashboard() {
           note: `Trích từ chốt sổ (Kỳ ${x.week_number || new Date(x.created_at).toLocaleDateString('vi-VN')})`,
           isIncome: true
         }));
+
+      if (currentAccrued > 0) {
+        deposits.unshift({
+          type: 'deposit',
+          amount: currentAccrued,
+          date: new Date().toISOString(),
+          note: `Trích lập tạm tính kỳ này (chưa chốt)`,
+          isIncome: true
+        });
+      }
       
       const expenses = fundSpentTxs
         .filter(t => cat === 'reserve' ? (t.category !== 'bank' && t.category !== 'parking') : t.category === cat)
@@ -189,9 +209,9 @@ export default function ManagementDashboard() {
       return [...deposits, ...expenses].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
     };
 
-    const bankHistory = buildHistory('bank', 'bank_loan_weekly');
-    const parkingHistory = buildHistory('parking', 'parking_weekly');
-    const reserveHistory = buildHistory('reserve', 'reserve_weekly');
+    const bankHistory = buildHistory('bank', 'bank_loan_weekly', currentPeriodBankAccrued);
+    const parkingHistory = buildHistory('parking', 'parking_weekly', currentPeriodParkingAccrued);
+    const reserveHistory = buildHistory('reserve', 'reserve_weekly', currentPeriodReserveAccrued);
 
     // --- 5. TÍNH LŨY KẾ LỢI NHUẬN ĐÃ CHIA ---
     const cumulativeOwner = allSettlements.reduce((s, x) => s + Number(x.owner_amount || 0), 0);
