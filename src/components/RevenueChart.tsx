@@ -121,7 +121,7 @@ export default function RevenueChart({ defaultStartDate, defaultEndDate }: Reven
         <h3 style={{ fontSize: '1.2rem', color: 'var(--text-primary)' }}>Biểu đồ Doanh thu & Chi phí</h3>
         
         <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
-          <div style={{ display: 'flex', background: 'rgba(255,255,255,0.05)', borderRadius: 'var(--radius-sm)', padding: '4px' }}>
+          <div style={{ display: 'flex', gap: '4px', background: 'rgba(255,255,255,0.05)', borderRadius: 'var(--radius-sm)', padding: '4px' }}>
             <button 
               onClick={() => setFilterMode('period')}
               className={`btn ${filterMode === 'period' ? 'btn-primary' : 'btn-glass'}`}
@@ -173,7 +173,7 @@ export default function RevenueChart({ defaultStartDate, defaultEndDate }: Reven
           <ResponsiveContainer width="100%" height="100%">
             <LineChart
               data={data}
-              margin={{ top: 5, right: 20, left: 20, bottom: 5 }}
+              margin={{ top: 15, right: 15, left: -10, bottom: 5 }}
             >
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" vertical={false} />
               <XAxis 
@@ -189,6 +189,7 @@ export default function RevenueChart({ defaultStartDate, defaultEndDate }: Reven
                 tickFormatter={(val) => `${val / 1000}k`}
                 tickLine={false}
                 axisLine={false}
+                width={40}
               />
               <Tooltip 
                 formatter={(value: unknown, name: unknown) => [formatCurrency(Number(value) || 0), String(name)]}
@@ -196,11 +197,11 @@ export default function RevenueChart({ defaultStartDate, defaultEndDate }: Reven
                 itemStyle={{ color: 'white' }}
               />
               <Legend 
-                verticalAlign="top" 
-                height={36} 
+                verticalAlign="bottom" 
+                height={50} 
                 iconType="circle" 
                 onClick={toggleLine}
-                wrapperStyle={{ cursor: 'pointer' }}
+                wrapperStyle={{ cursor: 'pointer', fontSize: '11px', paddingTop: '10px' }}
               />
               <Line 
                 hide={hiddenLines["Thu"]}
