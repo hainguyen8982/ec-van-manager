@@ -12,29 +12,19 @@ export async function GET(request: Request) {
   const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
   const supabase = createClient(supabaseUrl, supabaseKey);
 
-  // 1. Query matching transactions before update
-  const { data: beforeList, error: fetchError } = await supabase
+  // Query all transactions from June 1st to June 8th, 2026
+  const { data: allList, error: fetchError } = await supabase
     .from('transactions')
     .select('*')
-    .eq('transaction_date', '2026-06-04')
-    .eq('category', 'grab');
+    .gte('transaction_date', '2026-06-01')
+    .lte('transaction_date', '2026-06-08');
 
   if (fetchError) {
     return NextResponse.json({ success: false, error: fetchError.message });
   }
 
-  // 2. Perform update
-  const { data: updatedList, error: updateError } = await supabase
-    .from('transactions')
-    .update({ category: 'lalamove' })
-    .eq('transaction_date', '2026-06-04')
-    .eq('category', 'grab')
-    .select();
-
   return NextResponse.json({
     success: true,
-    found: beforeList,
-    updated: updatedList,
-    error: updateError ? updateError.message : null
+    allTransactions: allList
   });
 }
