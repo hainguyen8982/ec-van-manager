@@ -69,7 +69,7 @@ export default function OperationsSettlementPage() {
     const settings = settingsRes.data;
 
     const totalIncome = transactions.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0);
-    const totalExpense = transactions.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
+    const totalExpense = transactions.filter(t => t.type === 'expense' && !t.is_fund_spent).reduce((s, t) => s + t.amount, 0);
 
     const bankLoanWeekly = settings && settings.is_bank_loan_active !== false ? Math.round((settings.bank_loan_monthly / 30) * days) : 0;
     const parkingWeekly = settings && settings.is_parking_active !== false ? Math.round((settings.parking_monthly / 30) * days) : 0;
