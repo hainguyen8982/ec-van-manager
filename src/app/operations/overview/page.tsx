@@ -53,6 +53,13 @@ interface WeekStats {
   fundContributions: number;
   currentPeriodStart: string;
   currentPeriodEnd: string;
+  appStatsList: {
+    id: string;
+    name: string;
+    income: number;
+    count: number;
+    color: string;
+  }[];
 }
 
 
@@ -88,7 +95,7 @@ export default function OperationsOverview() {
     let startDateObj = new Date(now.getFullYear(), now.getMonth(), 1);
     if (allSettlements.length > 0) {
       const lastSettlement = allSettlements[0];
-      startDateObj = lastSettlement.end_date ? new Date(lastSettlement.end_date) : new Date(lastSettlement.created_at);
+      startDateObj = new Date(lastSettlement.end_date);
     }
     const startDay = new Date(startDateObj.getFullYear(), startDateObj.getMonth(), startDateObj.getDate());
     const endDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -104,15 +111,35 @@ export default function OperationsOverview() {
 
     // --- Lũy kế theo app (doanh thu và số đơn) ---
     const incomeTxs = allTransactions.filter(t => t.type === 'income');
-    const allTimeGrab = incomeTxs.filter(t => t.category === 'grab').reduce((s, t) => s + t.amount, 0);
-    const allTimeGrabCount = incomeTxs.filter(t => t.category === 'grab').length;
-    const allTimeAhamove = incomeTxs.filter(t => t.category === 'ahamove').reduce((s, t) => s + t.amount, 0);
-    const allTimeAhamoveCount = incomeTxs.filter(t => t.category === 'ahamove').length;
-    const allTimeLalamove = incomeTxs.filter(t => t.category === 'lalamove').reduce((s, t) => s + t.amount, 0);
-    const allTimeLalamoveCount = incomeTxs.filter(t => t.category === 'lalamove').length;
-    const allTimeOther = incomeTxs.filter(t => !['grab', 'ahamove', 'lalamove'].includes(t.category)).reduce((s, t) => s + t.amount, 0);
-    const allTimeOtherCount = incomeTxs.filter(t => !['grab', 'ahamove', 'lalamove'].includes(t.category)).length;
-    const allTimeIncome = allTimeGrab + allTimeAhamove + allTimeLalamove + allTimeOther;
+    const revenueSources = settings?.revenue_sources || [
+      { id: 'grab', name: 'Grab', color: '#00b14f' },
+      { id: 'ahamove', name: 'Ahamove', color: '#ff6b00' },
+      { id: 'lalamove', name: 'Lalamove', color: '#ff8b00' }
+    ];
+
+    const appStatsList = revenueSources.map((src: any) => {
+      const txs = incomeTxs.filter(t => t.category === src.id);
+      return {
+        id: src.id,
+        name: src.name,
+        income: txs.reduce((s, t) => s + t.amount, 0),
+        count: txs.length,
+        color: src.color
+      };
+    });
+
+    const knownSourceIds = revenueSources.map((s: any) => s.id);
+    const otherTxs = incomeTxs.filter(t => !knownSourceIds.includes(t.category));
+    const allTimeOther = otherTxs.reduce((s, t) => s + t.amount, 0);
+    const allTimeOtherCount = otherTxs.length;
+    const allTimeIncome = incomeTxs.reduce((s, t) => s + t.amount, 0);
+
+    const allTimeGrab = 0;
+    const allTimeGrabCount = 0;
+    const allTimeAhamove = 0;
+    const allTimeAhamoveCount = 0;
+    const allTimeLalamove = 0;
+    const allTimeLalamoveCount = 0;
 
     // --- Hiệu suất sạc ---
     const allTimeCharge = allTransactions.filter(t => t.type === 'expense' && t.category === 'charge').reduce((s, t) => s + t.amount, 0);
@@ -194,6 +221,7 @@ export default function OperationsOverview() {
       allTimeOther,
       allTimeOtherCount,
       allTimeIncome,
+      appStatsList,
       allTimeCharge,
       chargeEfficiency,
       bankDeposited,
@@ -405,9 +433,7 @@ export default function OperationsOverview() {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '0.75rem' }}>
               {(() => {
                 const apps = [
-                  { name: 'Grab', income: stats.allTimeGrab, count: stats.allTimeGrabCount, color: '#00b14f' },
-                  { name: 'Ahamove', income: stats.allTimeAhamove, count: stats.allTimeAhamoveCount, color: '#ff6b00' },
-                  { name: 'Lalamove', income: stats.allTimeLalamove, count: stats.allTimeLalamoveCount, color: '#ff8b00' },
+                  ...(stats.appStatsList || []),
                   { name: 'Ứng dụng khác', income: stats.allTimeOther, count: stats.allTimeOtherCount, color: 'var(--primary)' }
                 ];
                 
