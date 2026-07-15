@@ -36,6 +36,7 @@ export default function OperationsSettlementPage() {
   const [loading, setLoading] = useState(true);
   const [confirmed, setConfirmed] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
+  const [reserveAllocation, setReserveAllocation] = useState<number>(0);
   const supabase = createClient();
 
   const fmt = (n: number) => n.toLocaleString('vi-VN');
@@ -71,15 +72,15 @@ export default function OperationsSettlementPage() {
     const totalIncome = transactions.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0);
     const totalExpense = transactions.filter(t => t.type === 'expense' && !t.is_fund_spent).reduce((s, t) => s + t.amount, 0);
 
-    const bankLoanWeekly = settings && settings.is_bank_loan_active !== false ? Math.round((settings.bank_loan_monthly / 30) * days) : 0;
-    const parkingWeekly = settings && settings.is_parking_active !== false ? Math.round((settings.parking_monthly / 30) * days) : 0;
-    const reserveWeekly = settings && settings.is_reserve_active !== false ? Math.round((settings.reserve_monthly / 30) * days) : 0;
-    const weeklyFixed = bankLoanWeekly + parkingWeekly + reserveWeekly;
-const reserveSpent = transactions.filter(t => (t as any).is_fund_spent).reduce((s, t) => s + t.amount, 0);
-const reserveBalance = reserveWeekly - reserveSpent;
+    const bankLoanWeekly = 0;
+    const parkingWeekly = 0;
+    const reserveWeekly = 0;
+    const weeklyFixed = 0;
+    const reserveSpent = transactions.filter(t => t.type === 'expense' && t.is_fund_spent).reduce((s, t) => s + t.amount, 0);
+    const reserveBalance = 0;
 
     const carryForward = lastSettlement && lastSettlement.net_profit < 0 ? Math.abs(lastSettlement.net_profit) : 0;
-    const netProfit = totalIncome - totalExpense - weeklyFixed - carryForward;
+    const netProfit = totalIncome - totalExpense - carryForward;
     const driverRatio = settings?.driver_ratio ?? 50;
     const driverAmount = netProfit > 0 ? Math.round(netProfit * driverRatio / 100) : 0;
     const ownerAmount = netProfit > 0 ? netProfit - driverAmount : 0;
@@ -126,6 +127,12 @@ const reserveBalance = reserveWeekly - reserveSpent;
 
   const now = new Date();
 
+  // Dynamic calculations
+  const netProfit = stats.totalIncome - stats.totalExpense - stats.carryForward;
+  const remainingProfit = netProfit > 0 ? Math.max(0, netProfit - reserveAllocation) : 0;
+  const driverAmount = remainingProfit > 0 ? Math.round(remainingProfit * stats.driverRatio / 100) : 0;
+  const ownerAmount = remainingProfit > 0 ? remainingProfit - driverAmount : 0;
+
   const getCategoryName = (id: string, isIncome: boolean) => {
     if (isIncome) {
       const src = stats.revenueSources.find((s: any) => s.id === id);
@@ -143,21 +150,23 @@ const reserveBalance = reserveWeekly - reserveSpent;
     text += `--------------------------\n`;
     text += `1. TỔNG THU: +${fmt(stats.totalIncome)} đ\n`;
     text += `2. TỔNG CHI: -${fmt(stats.totalExpense)} đ\n`;
-    text += `3. TRÍCH QUỸ CỐ ĐỊNH:\n`;
-    text += `   - Ngân hàng: -${fmt(stats.bankLoanWeekly)} đ\n`;
-    text += `   - Bãi xe: -${fmt(stats.parkingWeekly)} đ\n`;
-    text += `   - Dự phòng: -${fmt(stats.reserveWeekly)} đ\n`;
+    if (reserveAllocation > 0) {
+      text += `3. TRÍCH QUỸ DỰ PHÒNG: -${fmt(reserveAllocation)} đ\n`;
+    }
     if (stats.carryForward > 0) text += `4. NỢ KỲ TRƯỚC: -${fmt(stats.carryForward)} đ\n`;
     text += `--------------------------\n`;
-    text += `👉 LỢI NHUẬN RÒNG: ${stats.netProfit >= 0 ? '+' : ''}${fmt(stats.netProfit)} đ\n`;
+    text += `👉 LỢI NHUẬN RÒNG: ${netProfit >= 0 ? '+' : ''}${fmt(netProfit)} đ\n`;
+    if (reserveAllocation > 0) {
+      text += `👉 LỢI NHUẬN PHÂN BỔ: ${fmt(remainingProfit)} đ\n`;
+    }
     
-    if (stats.netProfit > 0) {
+    if (netProfit > 0) {
       text += `\nPHÂN BỔ LỢI NHUẬN:\n`;
-      text += `- Lãi chia Góc Đầu Tư: ${fmt(stats.ownerAmount)} đ\n`;
-      text += `- Lãi chia Góc Vận Hành: ${fmt(stats.driverAmount)} đ\n`;
+      text += `- Lãi chia Góc Đầu Tư: ${fmt(ownerAmount)} đ\n`;
+      text += `- Lãi chia Góc Vận Hành: ${fmt(driverAmount)} đ\n`;
       text += `\n💰 TỔNG TIỀN CHUYỂN GÓC ĐẦU TƯ:\n`;
       text += `(Tiền Lãi + Tiền Dự phòng)\n`;
-      text += `=> ${fmt(stats.ownerAmount + stats.reserveWeekly)} đ\n`;
+      text += `=> ${fmt(ownerAmount + reserveAllocation)} đ\n`;
     } else {
       text += `\n⚠️ Lợi nhuận âm, khoản thiếu sẽ chuyển sang nợ kỳ sau.\n`;
     }
@@ -220,26 +229,22 @@ const reserveBalance = reserveWeekly - reserveSpent;
           <span style={{ color: 'var(--text-secondary)' }}>Chi phí vận hành:</span>
           <span style={{ color: 'var(--danger)' }}>- {fmt(stats.totalExpense)} đ</span>
         </div>
-        <div style={{ marginBottom: '0.5rem', borderTop: '1px dashed var(--glass-border)', paddingTop: '0.5rem', marginTop: '0.5rem' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.3rem' }}>
-            <span style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>↳ Quỹ ngân hàng:</span>
-            <span style={{ color: 'var(--warning)', fontSize: '0.9rem' }}>- {fmt(stats.bankLoanWeekly)} đ</span>
+        {(reserveAllocation > 0 || (stats.reserveSpent ?? 0) > 0) && (
+          <div style={{ marginBottom: '0.5rem', borderTop: '1px dashed var(--glass-border)', paddingTop: '0.5rem', marginTop: '0.5rem' }}>
+            {reserveAllocation > 0 && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                <span style={{ color: 'var(--text-secondary)' }}>Trích Quỹ dự phòng:</span>
+                <span style={{ color: 'var(--warning)' }}>- {fmt(reserveAllocation)} đ</span>
+              </div>
+            )}
+            {(stats.reserveSpent ?? 0) > 0 && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                <span style={{ color: 'var(--text-secondary)' }}>↳ Đã chi từ Quỹ dự phòng (trong kỳ):</span>
+                <span style={{ color: 'var(--danger)' }}>- {fmt(stats.reserveSpent ?? 0)} đ</span>
+              </div>
+            )}
           </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.3rem' }}>
-            <span style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>↳ Quỹ bãi xe:</span>
-            <span style={{ color: 'var(--warning)', fontSize: '0.9rem' }}>- {fmt(stats.parkingWeekly)} đ</span>
-          </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-            <span style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>↳ Quỹ dự phòng:</span>
-            <span style={{ color: 'var(--warning)', fontSize: '0.9rem' }}>- {fmt(stats.reserveWeekly)} đ</span>
-          </div>
-          {(stats.reserveSpent ?? 0) > 0 && (
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.3rem', borderTop: '1px dotted var(--glass-border)', paddingTop: '0.3rem' }}>
-              <span style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>↳ Đã chi từ các Quỹ (trong kỳ):</span>
-              <span style={{ color: 'var(--danger)', fontSize: '0.9rem' }}>- {fmt(stats.reserveSpent ?? 0)} đ</span>
-            </div>
-          )}
-          </div>
+        )}
         {stats.carryForward > 0 && (
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
             <span style={{ color: 'var(--text-secondary)' }}>Nợ kỳ trước chuyển sang:</span>
@@ -248,38 +253,34 @@ const reserveBalance = reserveWeekly - reserveSpent;
         )}
 
         <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: '1rem', borderTop: '1px solid var(--glass-border)', marginTop: '0.5rem' }}>
-          <strong style={{ fontSize: '1.1rem', color: stats.netProfit >= 0 ? 'var(--primary)' : 'var(--danger)' }}>LỢI NHUẬN RÒNG:</strong>
-          <strong style={{ fontSize: '1.1rem', color: stats.netProfit >= 0 ? 'var(--text-primary)' : 'var(--danger)' }}>
-            {stats.netProfit >= 0 ? '' : '- '}{fmt(Math.abs(stats.netProfit))} đ
+          <strong style={{ fontSize: '1.1rem', color: netProfit >= 0 ? 'var(--primary)' : 'var(--danger)' }}>LỢI NHUẬN RÒNG:</strong>
+          <strong style={{ fontSize: '1.1rem', color: netProfit >= 0 ? 'var(--text-primary)' : 'var(--danger)' }}>
+            {netProfit >= 0 ? '' : '- '}{fmt(Math.abs(netProfit))} đ
           </strong>
         </div>
       </div>
 
-      {stats.netProfit > 0 && (
+      {netProfit > 0 && (
         <div className="glass-panel" style={{ marginBottom: '1.5rem', border: '1px solid var(--success)' }}>
           <h3 style={{ marginBottom: '1rem', color: 'var(--success)', fontSize: '1rem' }}>Phân bổ Lợi nhuận ròng</h3>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
             <span style={{ color: 'var(--text-secondary)' }}>Tiền lãi chia cho Góc Đầu Tư (Bạn):</span>
-            <strong style={{ color: 'var(--success)' }}>{fmt(stats.ownerAmount)} đ</strong>
+            <strong style={{ color: 'var(--success)' }}>{fmt(ownerAmount)} đ</strong>
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
             <span style={{ color: 'var(--text-secondary)' }}>Tiền lãi chia cho Góc Vận Hành (Tài xế):</span>
-            <strong>{fmt(stats.driverAmount)} đ</strong>
+            <strong>{fmt(driverAmount)} đ</strong>
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px dashed var(--glass-border)', paddingTop: '0.75rem', marginBottom: '0.5rem' }}>
-            <span style={{ color: 'var(--text-secondary)' }}>Các khoản Quỹ Tài xế giữ để đóng (Ngân hàng, Bãi xe):</span>
-            <strong style={{ color: 'var(--warning)' }}>{fmt(stats.bankLoanWeekly + stats.parkingWeekly)} đ</strong>
-          </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
             <span style={{ color: 'var(--text-secondary)' }}>Quỹ dự phòng (Chuyển cho Bạn giữ):</span>
-            <strong style={{ color: 'var(--warning)' }}>{fmt(stats.reserveWeekly)} đ</strong>
+            <strong style={{ color: 'var(--warning)' }}>{fmt(reserveAllocation)} đ</strong>
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '1rem', borderTop: '2px solid var(--primary)', paddingTop: '1rem' }}>
             <span style={{ color: 'var(--primary)', fontWeight: 700 }}>👉 SỐ TIỀN TÀI XẾ CẦN CHUYỂN CHO BẠN:</span>
             <div style={{ textAlign: 'right' }}>
-              <strong style={{ fontSize: '1.3rem', color: 'var(--primary)' }}>{fmt(stats.ownerAmount + stats.reserveWeekly)} đ</strong>
+              <strong style={{ fontSize: '1.3rem', color: 'var(--primary)' }}>{fmt(ownerAmount + reserveAllocation)} đ</strong>
               <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '4px' }}>
-                (Lãi: {fmt(stats.ownerAmount)} đ + Dự phòng: {fmt(stats.reserveWeekly)} đ)
+                (Lãi: {fmt(ownerAmount)} đ + Dự phòng: {fmt(reserveAllocation)} đ)
               </div>
             </div>
           </div>
@@ -359,15 +360,36 @@ const reserveBalance = reserveWeekly - reserveSpent;
         )}
       </div>
 
-    {/* UI for custom fund deduction when not confirmed */}
     {!confirmed && (
       <div style={{ marginTop: '1rem', padding: '1rem', borderTop: '1px solid var(--glass-border)' }}>
         <h3 style={{ marginBottom: '1rem', fontSize: '1rem' }}>Xác nhận Chốt sổ</h3>
-        <div style={{ marginBottom: '1rem' }}>
-          <label style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
-            Lưu ý: Các Quỹ cố định đã được hệ thống tự động tính theo số ngày thực tế ({stats.daysCount} ngày).
-          </label>
-        </div>
+
+        {netProfit > 0 && (
+          <div className="input-group" style={{ marginBottom: '1.5rem' }}>
+            <label className="input-label" style={{ color: 'var(--warning)', fontWeight: 600 }}>
+              Trích lập Quỹ dự phòng từ Lợi nhuận (VNĐ):
+            </label>
+            <input
+              type="text"
+              className="input-field"
+              placeholder="VD: 500.000"
+              value={reserveAllocation === 0 ? '' : reserveAllocation.toLocaleString('vi-VN')}
+              onChange={(e) => {
+                const val = parseInt(e.target.value.replace(/\D/g, ''), 10) || 0;
+                if (val > netProfit) {
+                  setReserveAllocation(netProfit);
+                } else {
+                  setReserveAllocation(val);
+                }
+              }}
+              style={{ fontSize: '1.1rem', padding: '10px 14px', width: '100%', background: 'rgba(0,0,0,0.2)', color: '#fff', border: '1px solid var(--glass-border)', borderRadius: '4px' }}
+            />
+            <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
+              * Tối đa: {netProfit.toLocaleString('vi-VN')} đ (lợi nhuận ròng kỳ này). Số tiền này sẽ được góp trực tiếp vào Quỹ dự phòng.
+            </p>
+          </div>
+        )}
+
         <button
           className="btn btn-success"
           onClick={async () => {
@@ -375,15 +397,15 @@ const reserveBalance = reserveWeekly - reserveSpent;
               start_date: stats.startDate,
               end_date: stats.endDate,
               is_confirmed: true,
-              net_profit: stats.netProfit,
+              net_profit: netProfit > 0 ? remainingProfit : netProfit,
               total_income: stats.totalIncome,
               total_expense: stats.totalExpense,
-              fixed_costs: stats.fixedCosts,
-              bank_loan_weekly: stats.bankLoanWeekly,
-              parking_weekly: stats.parkingWeekly,
-              reserve_weekly: stats.reserveWeekly,
-              driver_amount: stats.driverAmount,
-              owner_amount: stats.ownerAmount,
+              fixed_costs: reserveAllocation,
+              bank_loan_weekly: 0,
+              parking_weekly: 0,
+              reserve_weekly: reserveAllocation,
+              driver_amount: driverAmount,
+              owner_amount: ownerAmount,
             }).select().single();
 
             if (error) {

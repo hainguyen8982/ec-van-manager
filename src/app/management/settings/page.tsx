@@ -137,12 +137,12 @@ export default function SettingsPage() {
     setError('');
 
     const payload: any = {
-      bank_loan_monthly: parseAmount(bankLoan),
-      is_bank_loan_active: isBankLoanActive,
-      parking_monthly: parseAmount(parking),
-      is_parking_active: isParkingActive,
-      reserve_monthly: parseAmount(reserve),
-      is_reserve_active: isReserveActive,
+      bank_loan_monthly: 0,
+      is_bank_loan_active: false,
+      parking_monthly: 0,
+      is_parking_active: false,
+      reserve_monthly: 0,
+      is_reserve_active: false,
       driver_ratio: parseInt(driverRatio, 10),
       maintenance_interval_weeks: parseInt(maintenanceInterval, 10),
       maintenance_min_fund: parseAmount(maintenanceMinFund),
@@ -188,70 +188,7 @@ export default function SettingsPage() {
 
       <div className="glass-panel">
         <form onSubmit={handleSave}>
-          <h3 style={{ fontSize: '1.1rem', marginBottom: '1rem', color: 'var(--primary)' }}>Chi phí Cố định (Tháng)</h3>
 
-          <div className="input-group">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-              <label className="input-label" style={{ marginBottom: 0 }}>Tiền góp ngân hàng (Tháng này)</label>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem', cursor: 'pointer' }}>
-                <input type="checkbox" checked={isBankLoanActive} onChange={(e) => setIsBankLoanActive(e.target.checked)} />
-                <span style={{ color: isBankLoanActive ? 'var(--success)' : 'var(--text-secondary)' }}>Kích hoạt trích quỹ</span>
-              </label>
-            </div>
-            <input type="tel" className="input-field"
-              value={bankLoan}
-              onChange={(e) => setBankLoan(formatCurrency(e.target.value))}
-              disabled={!isBankLoanActive}
-              required={isBankLoanActive} />
-            <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '0.5rem', lineHeight: 1.4 }}>
-              * Mở App ngân hàng xem tháng này đóng bao nhiêu rồi điền vào. Hệ thống tự chia 4 tuần.
-            </p>
-          </div>
-
-          <div className="input-group" style={{ marginTop: '1rem' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-              <label className="input-label" style={{ marginBottom: 0 }}>Tiền bãi đỗ xe / tháng</label>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem', cursor: 'pointer' }}>
-                <input type="checkbox" checked={isParkingActive} onChange={(e) => setIsParkingActive(e.target.checked)} />
-                <span style={{ color: isParkingActive ? 'var(--success)' : 'var(--text-secondary)' }}>Kích hoạt trích quỹ</span>
-              </label>
-            </div>
-            <input type="tel" className="input-field"
-              value={parking}
-              onChange={(e) => setParking(formatCurrency(e.target.value))}
-              disabled={!isParkingActive}
-              required={isParkingActive} />
-          </div>
-
-          <div className="input-group" style={{ marginTop: '1rem' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-              <label className="input-label" style={{ marginBottom: 0 }}>Trích lập Dự phòng / tháng</label>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem', cursor: 'pointer' }}>
-                <input type="checkbox" checked={isReserveActive} onChange={(e) => setIsReserveActive(e.target.checked)} />
-                <span style={{ color: isReserveActive ? 'var(--success)' : 'var(--text-secondary)' }}>Kích hoạt trích quỹ</span>
-              </label>
-            </div>
-            <input type="tel" className="input-field"
-              value={reserve}
-              onChange={(e) => setReserve(formatCurrency(e.target.value))}
-              disabled={!isReserveActive}
-              required={isReserveActive} />
-          </div>
-
-          <div style={{ marginTop: '1rem', padding: '12px', borderRadius: 'var(--radius-sm)', background: 'rgba(0,210,255,0.05)', border: '1px solid var(--glass-border)' }}>
-            <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-              📊 Tổng quỹ cố định/tháng thực thu:{' '}
-              <strong style={{ color: 'var(--warning)' }}>
-                {formatCurrency(
-                  (isBankLoanActive ? parseAmount(bankLoan) : 0) + 
-                  (isParkingActive ? parseAmount(parking) : 0) + 
-                  (isReserveActive ? parseAmount(reserve) : 0)
-                )} đ
-              </strong>
-            </p>
-          </div>
-
-          <hr style={{ border: 'none', borderTop: '1px solid var(--glass-border)', margin: '2rem 0' }} />
 
           <h3 style={{ fontSize: '1.1rem', marginBottom: '1rem', color: 'var(--success)' }}>Tỷ lệ Chia Lợi nhuận ròng</h3>
 

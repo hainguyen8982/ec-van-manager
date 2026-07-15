@@ -114,7 +114,7 @@ export default function ExportPDFButton({
             </div>
             <div style={{ flex: 1 }}>
               <p style={{ margin: '0 0 5px 0', fontSize: '14px', color: '#555' }}>Tổng Chi Phí:</p>
-              <h2 style={{ margin: 0, fontSize: '20px', color: '#dc2626' }}>- {fmt(settlement.total_expense + (settlement.fixed_costs || 0))} VNĐ</h2>
+              <h2 style={{ margin: 0, fontSize: '20px', color: '#dc2626' }}>- {fmt(settlement.total_expense)} VNĐ</h2>
             </div>
             <div style={{ flex: 1, textAlign: 'right' }}>
               <p style={{ margin: '0 0 5px 0', fontSize: '14px', color: '#555' }}>LỢI NHUẬN RÒNG:</p>
@@ -205,16 +205,25 @@ export default function ExportPDFButton({
           {/* Allocation */}
           <div style={{ marginTop: '30px', padding: '20px', background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '8px' }}>
             <h3 style={{ fontSize: '18px', margin: '0 0 15px 0', color: '#0f172a', textAlign: 'center' }}>KẾT QUẢ PHÂN BỔ LỢI NHUẬN</h3>
-            <div style={{ display: 'flex', justifyContent: 'space-around' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-around', alignItems: 'center' }}>
               <div style={{ textAlign: 'center' }}>
-                <p style={{ margin: '0 0 5px 0', fontSize: '15px', color: '#475569' }}>Tiền chia cho GÓC ĐẦU TƯ</p>
-                <h2 style={{ margin: 0, fontSize: '22px', color: '#0f172a' }}>{fmt(settlement.owner_amount || 0)} VNĐ</h2>
+                <p style={{ margin: '0 0 5px 0', fontSize: '14px', color: '#475569' }}>Tiền chia cho GÓC ĐẦU TƯ</p>
+                <h2 style={{ margin: 0, fontSize: '18px', color: '#0f172a' }}>{fmt(settlement.owner_amount || 0)} VNĐ</h2>
               </div>
-              <div style={{ width: '1px', background: '#cbd5e1' }}></div>
+              <div style={{ width: '1px', height: '30px', background: '#cbd5e1' }}></div>
               <div style={{ textAlign: 'center' }}>
-                <p style={{ margin: '0 0 5px 0', fontSize: '15px', color: '#475569' }}>Tiền chia cho GÓC VẬN HÀNH</p>
-                <h2 style={{ margin: 0, fontSize: '22px', color: '#0f172a' }}>{fmt(settlement.driver_amount || 0)} VNĐ</h2>
+                <p style={{ margin: '0 0 5px 0', fontSize: '14px', color: '#475569' }}>Tiền chia cho GÓC VẬN HÀNH</p>
+                <h2 style={{ margin: 0, fontSize: '18px', color: '#0f172a' }}>{fmt(settlement.driver_amount || 0)} VNĐ</h2>
               </div>
+              {Number(settlement.reserve_weekly || 0) > 0 && (
+                <>
+                  <div style={{ width: '1px', height: '30px', background: '#cbd5e1' }}></div>
+                  <div style={{ textAlign: 'center' }}>
+                    <p style={{ margin: '0 0 5px 0', fontSize: '14px', color: '#475569' }}>Trích Quỹ dự phòng từ lãi</p>
+                    <h2 style={{ margin: 0, fontSize: '18px', color: '#b45309' }}>{fmt(settlement.reserve_weekly)} VNĐ</h2>
+                  </div>
+                </>
+              )}
             </div>
           </div>
 

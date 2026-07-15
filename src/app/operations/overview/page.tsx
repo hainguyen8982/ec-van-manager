@@ -94,12 +94,10 @@ export default function OperationsOverview() {
     const endDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     let days = Math.max(0, Math.round((endDay.getTime() - startDay.getTime()) / (1000 * 60 * 60 * 24)));
 
-    const weeklyFixed = settings
-      ? Math.round((settings.bank_loan_monthly / 30) * days) + Math.round((settings.parking_monthly / 30) * days) + Math.round((settings.reserve_monthly / 30) * days)
-      : 0;
+    const weeklyFixed = 0;
     const lastSettlement = allSettlements[0];
     const carryForward = lastSettlement && lastSettlement.net_profit < 0 ? Math.abs(lastSettlement.net_profit) : 0;
-    const netProfit = totalIncome - totalExpense - weeklyFixed - carryForward;
+    const netProfit = totalIncome - totalExpense - carryForward;
     const driverRatio = settings?.driver_ratio ?? 50;
     const driverAmount = netProfit > 0 ? Math.round(netProfit * driverRatio / 100) : 0;
     const ownerAmount = netProfit > 0 ? netProfit - driverAmount : 0;
@@ -121,74 +119,58 @@ export default function OperationsOverview() {
     const chargeEfficiency = allTimeIncome > 0 ? (allTimeCharge / allTimeIncome) * 100 : 0;
 
     // --- 4. TÍNH TOÁN CÁC QUỸ CỐ ĐỊNH (NGÂN HÀNG, BÃI XE, DỰ PHÒNG) ---
+    const bankDeposited = 0;
+    const bankSpent = 0;
+    const bankBalance = 0;
+    const bankHistory: any[] = [];
+    const parkingDeposited = 0;
+    const parkingSpent = 0;
+    const parkingBalance = 0;
+    const parkingHistory: any[] = [];
+
     // Tổng trích từ các tuần chốt sổ
-    const bankDepositedConfirmed = allSettlements.reduce((s, x) => s + Number(x.bank_loan_weekly || 0), 0);
-    const parkingDepositedConfirmed = allSettlements.reduce((s, x) => s + Number(x.parking_weekly || 0), 0);
     const reserveDepositedConfirmed = allSettlements.reduce((s, x) => s + Number(x.reserve_weekly || 0), 0);
-
-    // Tính trích lập tạm tính của kỳ hiện tại (chưa chốt sổ) để cộng vào quỹ thời gian thực
-    const currentPeriodBankAccrued = settings && settings.is_bank_loan_active !== false ? Math.round((settings.bank_loan_monthly / 30) * days) : 0;
-    const currentPeriodParkingAccrued = settings && settings.is_parking_active !== false ? Math.round((settings.parking_monthly / 30) * days) : 0;
-    const currentPeriodReserveAccrued = settings && settings.is_reserve_active !== false ? Math.round((settings.reserve_monthly / 30) * days) : 0;
-
-    // Tổng trích lũy thời gian thực (đã chốt + tạm tính kỳ này)
-    const bankDeposited = bankDepositedConfirmed + currentPeriodBankAccrued;
-    const parkingDeposited = parkingDepositedConfirmed + currentPeriodParkingAccrued;
-    const reserveDeposited = reserveDepositedConfirmed + currentPeriodReserveAccrued;
 
     // Tổng chi từ các quỹ
     const fundSpentTxs = allTransactions.filter(t => t.type === 'expense' && t.is_fund_spent);
-    
-    const bankSpent = fundSpentTxs.filter(t => t.category === 'bank').reduce((s, t) => s + t.amount, 0);
-    const parkingSpent = fundSpentTxs.filter(t => t.category === 'parking').reduce((s, t) => s + t.amount, 0);
-    const reserveSpent = fundSpentTxs.filter(t => t.category !== 'bank' && t.category !== 'parking').reduce((s, t) => s + t.amount, 0);
+    const reserveSpent = fundSpentTxs.reduce((s, t) => s + t.amount, 0);
 
-    // Tồn quỹ
-    const bankBalance = bankDeposited - bankSpent;
-    const parkingBalance = parkingDeposited - parkingSpent;
-    const reserveBalance = reserveDeposited - reserveSpent;
-
-    // Lịch sử chi tiết từng quỹ
-    const buildHistory = (cat: string, depField: string, currentAccrued: number) => {
-      const deposits = allSettlements
-        .filter(x => Number(x[depField] || 0) > 0)
-        .map(x => ({
-          type: 'deposit',
-          amount: Number(x[depField]),
-          date: x.created_at,
-          note: `Trích từ chốt sổ (Kỳ ${x.week_number || new Date(x.created_at).toLocaleDateString('vi-VN')})`,
-          isIncome: true
-        }));
-
-      if (currentAccrued > 0) {
-        deposits.unshift({
-          type: 'deposit',
-          amount: currentAccrued,
-          date: new Date().toISOString(),
-          note: `Trích lập tạm tính kỳ này (chưa chốt)`,
-          isIncome: true
-        });
-      }
-      
-      const expenses = fundSpentTxs
-        .filter(t => cat === 'reserve' ? (t.category !== 'bank' && t.category !== 'parking') : t.category === cat)
-        .map(t => ({
-          type: 'expense',
-          amount: t.amount,
-          date: t.transaction_date,
-          note: t.note || 'Chi quỹ',
-          isIncome: false
-        }));
-
-      return [...deposits, ...expenses].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-    };
-
-    const bankHistory = buildHistory('bank', 'bank_loan_weekly', currentPeriodBankAccrued);
-    const parkingHistory = buildHistory('parking', 'parking_weekly', currentPeriodParkingAccrued);
-    const reserveHistory = buildHistory('reserve', 'reserve_weekly', currentPeriodReserveAccrued);
-
+    // Manual contributions
     const fundContributionsTxs = allTransactions.filter(t => t.type === 'contribution');
     const fundContributions = fundContributionsTxs.reduce((s, t) => s + t.amount, 0);
+
+    // Tồn quỹ dự phòng = Tổng trích chốt sổ + Góp quỹ thủ công - Chi từ quỹ
+    const reserveDeposited = reserveDepositedConfirmed;
+    const reserveBalance = reserveDepositedConfirmed + fundContributions - reserveSpent;
+
+    // Lịch sử chi tiết quỹ dự phòng
+    const reserveDepositsFromSettlement = allSettlements
+      .filter(x => Number(x.reserve_weekly || 0) > 0)
+      .map(x => ({
+        type: 'deposit',
+        amount: Number(x.reserve_weekly),
+        date: x.created_at,
+        note: `Trích từ chốt sổ (Kỳ ${x.week_number || new Date(x.created_at).toLocaleDateString('vi-VN')})`,
+        isIncome: true
+      }));
+
+    const reserveManualContributions = fundContributionsTxs.map(t => ({
+      type: 'deposit',
+      amount: t.amount,
+      date: t.transaction_date || t.created_at,
+      note: t.note || 'Góp quỹ (Tiền túi)',
+      isIncome: true
+    }));
+
+    const reserveExpenses = fundSpentTxs.map(t => ({
+      type: 'expense',
+      amount: t.amount,
+      date: t.transaction_date || t.created_at,
+      note: t.note || 'Chi quỹ',
+      isIncome: false
+    }));
+
+    const reserveHistory = [...reserveDepositsFromSettlement, ...reserveManualContributions, ...reserveExpenses].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
     // --- Lũy kế lợi nhuận ---
     const cumulativeOperations = allSettlements.reduce((s, x) => s + Number(x.driver_amount || 0), 0);
@@ -308,10 +290,7 @@ export default function OperationsOverview() {
               <p className="input-label">Chi phí vận hành</p>
               <h3 style={{ fontSize: '1.8rem', color: 'var(--danger)' }}>{fmt(stats.totalExpense)} đ</h3>
             </div>
-            <div className="glass-panel" style={{ borderLeft: '4px solid var(--warning)' }}>
-              <p className="input-label">Quỹ & Phí cố định (Đóng ngân hàng, bãi xe, dự phòng)</p>
-              <h3 style={{ fontSize: '1.8rem', color: 'var(--warning)' }}>{fmt(stats.fixedCosts)} đ</h3>
-            </div>
+
             {stats.carryForward > 0 && (
               <div className="glass-panel" style={{ borderLeft: '4px solid var(--danger)' }}>
                 <p className="input-label">Khoản nợ chuyển từ kỳ trước</p>
@@ -360,77 +339,7 @@ export default function OperationsOverview() {
             <h3 style={{ fontSize: '1.1rem', marginBottom: '1rem', color: 'var(--warning)' }}>Quản lý Các Quỹ (Ngân hàng, Bãi xe, Dự phòng)</h3>
             
             <div style={{ display: 'grid', gap: '0.5rem', marginBottom: '1rem' }}>
-              {/* Quỹ Ngân Hàng */}
-              <div 
-                onClick={() => setExpandedFund(expandedFund === 'bank' ? null : 'bank')}
-                style={{ cursor: 'pointer', padding: '10px 12px', background: 'rgba(255,255,255,0.02)', borderRadius: '4px', border: expandedFund === 'bank' ? '1px solid var(--primary)' : '1px solid var(--glass-border)' }}
-              >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div>
-                    <p style={{ fontWeight: 600, fontSize: '0.95rem', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      🏦 Quỹ Ngân hàng
-                    </p>
-                    <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Trích: +{fmt(stats.bankDeposited)} | Chi: -{fmt(stats.bankSpent)}</p>
-                  </div>
-                  <div style={{ textAlign: 'right' }}>
-                    <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Số dư</p>
-                    <p style={{ fontWeight: 700, fontSize: '1.1rem', color: stats.bankBalance >= 0 ? 'var(--success)' : 'var(--danger)' }}>{fmt(stats.bankBalance)}</p>
-                  </div>
-                </div>
-                {expandedFund === 'bank' && (
-                  <div style={{ marginTop: '1rem', borderTop: '1px dashed var(--glass-border)', paddingTop: '0.75rem' }}>
-                    <p style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>Chi tiết giao dịch:</p>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                      {stats.bankHistory.length > 0 ? stats.bankHistory.map((item: any, idx: number) => (
-                        <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', padding: '6px 8px', background: 'rgba(0,0,0,0.15)', borderRadius: '4px' }}>
-                          <div>
-                            <span style={{ color: item.isIncome ? 'var(--success)' : 'var(--danger)', fontWeight: 500 }}>{item.isIncome ? 'Nạp quỹ' : 'Chi quỹ'}</span>
-                            <span style={{ color: 'var(--text-secondary)', marginLeft: '0.5rem' }}>({new Date(item.date).toLocaleDateString('vi-VN')})</span>
-                            <p style={{ color: 'var(--text-secondary)', fontSize: '0.75rem', marginTop: '2px' }}>{item.note}</p>
-                          </div>
-                          <strong style={{ color: item.isIncome ? 'var(--success)' : 'var(--danger)' }}>{item.isIncome ? '+' : '-'}{fmt(item.amount)}</strong>
-                        </div>
-                      )) : <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Chưa có giao dịch.</p>}
-                    </div>
-                  </div>
-                )}
-              </div>
 
-              {/* Quỹ Bãi Xe */}
-              <div 
-                onClick={() => setExpandedFund(expandedFund === 'parking' ? null : 'parking')}
-                style={{ cursor: 'pointer', padding: '10px 12px', background: 'rgba(255,255,255,0.02)', borderRadius: '4px', border: expandedFund === 'parking' ? '1px solid var(--primary)' : '1px solid var(--glass-border)' }}
-              >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div>
-                    <p style={{ fontWeight: 600, fontSize: '0.95rem', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      🅿️ Quỹ Bãi xe
-                    </p>
-                    <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Trích: +{fmt(stats.parkingDeposited)} | Chi: -{fmt(stats.parkingSpent)}</p>
-                  </div>
-                  <div style={{ textAlign: 'right' }}>
-                    <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Số dư</p>
-                    <p style={{ fontWeight: 700, fontSize: '1.1rem', color: stats.parkingBalance >= 0 ? 'var(--success)' : 'var(--danger)' }}>{fmt(stats.parkingBalance)}</p>
-                  </div>
-                </div>
-                {expandedFund === 'parking' && (
-                  <div style={{ marginTop: '1rem', borderTop: '1px dashed var(--glass-border)', paddingTop: '0.75rem' }}>
-                    <p style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>Chi tiết giao dịch:</p>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                      {stats.parkingHistory.length > 0 ? stats.parkingHistory.map((item: any, idx: number) => (
-                        <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', padding: '6px 8px', background: 'rgba(0,0,0,0.15)', borderRadius: '4px' }}>
-                          <div>
-                            <span style={{ color: item.isIncome ? 'var(--success)' : 'var(--danger)', fontWeight: 500 }}>{item.isIncome ? 'Nạp quỹ' : 'Chi quỹ'}</span>
-                            <span style={{ color: 'var(--text-secondary)', marginLeft: '0.5rem' }}>({new Date(item.date).toLocaleDateString('vi-VN')})</span>
-                            <p style={{ color: 'var(--text-secondary)', fontSize: '0.75rem', marginTop: '2px' }}>{item.note}</p>
-                          </div>
-                          <strong style={{ color: item.isIncome ? 'var(--success)' : 'var(--danger)' }}>{item.isIncome ? '+' : '-'}{fmt(item.amount)}</strong>
-                        </div>
-                      )) : <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Chưa có giao dịch.</p>}
-                    </div>
-                  </div>
-                )}
-              </div>
 
               {/* Quỹ Dự Phòng */}
               <div 
