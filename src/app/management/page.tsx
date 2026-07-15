@@ -79,6 +79,13 @@ interface DashboardStats {
     profitMargin: number;
     insight: string;
   } | null;
+  appStatsList: {
+    id: string;
+    name: string;
+    income: number;
+    count: number;
+    color: string;
+  }[];
 }
 
 export default function ManagementDashboard() {
@@ -132,11 +139,31 @@ export default function ManagementDashboard() {
 
     // --- 2. TÍNH TOÁN LŨY KẾ DOANH THU THEO APP (ALL-TIME) ---
     const allTimeIncomeTxs = allTransactions.filter(t => t.type === 'income');
-    const allTimeGrab = allTimeIncomeTxs.filter(t => t.category === 'grab').reduce((s, t) => s + t.amount, 0);
-    const allTimeAhamove = allTimeIncomeTxs.filter(t => t.category === 'ahamove').reduce((s, t) => s + t.amount, 0);
-    const allTimeLalamove = allTimeIncomeTxs.filter(t => t.category === 'lalamove').reduce((s, t) => s + t.amount, 0);
-    const allTimeOther = allTimeIncomeTxs.filter(t => !['grab', 'ahamove', 'lalamove'].includes(t.category)).reduce((s, t) => s + t.amount, 0);
-    const allTimeIncome = allTimeGrab + allTimeAhamove + allTimeLalamove + allTimeOther;
+    const revenueSources = settings?.revenue_sources || [
+      { id: 'grab', name: 'Grab', color: '#00b14f' },
+      { id: 'ahamove', name: 'Ahamove', color: '#ff6b00' },
+      { id: 'lalamove', name: 'Lalamove', color: '#ff8b00' }
+    ];
+
+    const appStatsList = revenueSources.map((src: any) => {
+      const txs = allTimeIncomeTxs.filter(t => t.category === src.id);
+      return {
+        id: src.id,
+        name: src.name,
+        income: txs.reduce((s, t) => s + t.amount, 0),
+        count: txs.length,
+        color: src.color
+      };
+    });
+
+    const knownSourceIds = revenueSources.map((s: any) => s.id);
+    const otherTxs = allTimeIncomeTxs.filter(t => !knownSourceIds.includes(t.category));
+    const allTimeOther = otherTxs.reduce((s, t) => s + t.amount, 0);
+    const allTimeIncome = allTimeIncomeTxs.reduce((s, t) => s + t.amount, 0);
+
+    const allTimeGrab = 0;
+    const allTimeAhamove = 0;
+    const allTimeLalamove = 0;
 
     // --- 3. TÍNH TOÁN HIỆU SUẤT SẠC PIN (ALL-TIME) ---
     const allTimeCharge = allTransactions.filter(t => t.type === 'expense' && t.category === 'charge').reduce((s, t) => s + t.amount, 0);
@@ -312,11 +339,12 @@ export default function ManagementDashboard() {
       allTransactions,
       expenseCategories: settings?.expense_categories || [],
       revenueSources: settings?.revenue_sources || [],
-      // New order count fields
-      allTimeGrabOrders: allTimeIncomeTxs.filter(t => t.type === 'income' && t.category === 'grab').length,
-      allTimeAhamoveOrders: allTimeIncomeTxs.filter(t => t.type === 'income' && t.category === 'ahamove').length,
-      allTimeLalamoveOrders: allTimeIncomeTxs.filter(t => t.type === 'income' && t.category === 'lalamove').length,
-      allTimeOtherOrders: allTimeIncomeTxs.filter(t => t.type === 'income' && !['grab', 'ahamove', 'lalamove'].includes(t.category)).length,
+      appStatsList,
+      // New order count fields (legacy compatibility, unused in render now)
+      allTimeGrabOrders: 0,
+      allTimeAhamoveOrders: 0,
+      allTimeLalamoveOrders: 0,
+      allTimeOtherOrders: allTimeOther,
       trendData,
     });
     setLoading(false);
@@ -632,9 +660,7 @@ export default function ManagementDashboard() {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '0.75rem' }}>
               {(() => {
                 const apps = [
-                  { id: 'grab', name: 'Grab', income: stats.allTimeGrab, count: stats.allTimeGrabOrders, color: '#00b14f' },
-                  { id: 'ahamove', name: 'Ahamove', income: stats.allTimeAhamove, count: stats.allTimeAhamoveOrders, color: '#ff6b00' },
-                  { id: 'lalamove', name: 'Lalamove', income: stats.allTimeLalamove, count: stats.allTimeLalamoveOrders, color: '#ff8b00' },
+                  ...(stats.appStatsList || []),
                   { id: 'other', name: 'Ứng dụng khác', income: stats.allTimeOther, count: stats.allTimeOtherOrders, color: 'var(--primary)' }
                 ];
                 
