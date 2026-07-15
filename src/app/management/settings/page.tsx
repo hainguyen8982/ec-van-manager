@@ -257,6 +257,32 @@ export default function SettingsPage() {
                 <button
                   type="button"
                   className="btn btn-glass"
+                  style={{ fontSize: '0.75rem', padding: '4px 8px' }}
+                  disabled={idx === 0}
+                  onClick={() => {
+                    const updated = [...revenueSources];
+                    const temp = updated[idx];
+                    updated[idx] = updated[idx - 1];
+                    updated[idx - 1] = temp;
+                    setRevenueSources(updated);
+                  }}
+                >▲</button>
+                <button
+                  type="button"
+                  className="btn btn-glass"
+                  style={{ fontSize: '0.75rem', padding: '4px 8px' }}
+                  disabled={idx === revenueSources.length - 1}
+                  onClick={() => {
+                    const updated = [...revenueSources];
+                    const temp = updated[idx];
+                    updated[idx] = updated[idx + 1];
+                    updated[idx + 1] = temp;
+                    setRevenueSources(updated);
+                  }}
+                >▼</button>
+                <button
+                  type="button"
+                  className="btn btn-glass"
                   style={{ fontSize: '0.75rem', padding: '4px 10px' }}
                   onClick={() => {
                     setEditingIndex(idx);
@@ -376,6 +402,32 @@ export default function SettingsPage() {
                   <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>{cat.name}</span>
                   <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginLeft: '0.5rem' }}>({cat.id}) {cat.isFundEligible && '• Quỹ DP'}</span>
                 </div>
+                <button
+                  type="button"
+                  className="btn btn-glass"
+                  style={{ fontSize: '0.75rem', padding: '4px 8px' }}
+                  disabled={idx === 0}
+                  onClick={() => {
+                    const updated = [...expenseCategories];
+                    const temp = updated[idx];
+                    updated[idx] = updated[idx - 1];
+                    updated[idx - 1] = temp;
+                    setExpenseCategories(updated);
+                  }}
+                >▲</button>
+                <button
+                  type="button"
+                  className="btn btn-glass"
+                  style={{ fontSize: '0.75rem', padding: '4px 8px' }}
+                  disabled={idx === expenseCategories.length - 1}
+                  onClick={() => {
+                    const updated = [...expenseCategories];
+                    const temp = updated[idx];
+                    updated[idx] = updated[idx + 1];
+                    updated[idx + 1] = temp;
+                    setExpenseCategories(updated);
+                  }}
+                >▼</button>
                 <button
                   type="button"
                   className="btn btn-glass"
