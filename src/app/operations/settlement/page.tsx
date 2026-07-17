@@ -250,7 +250,14 @@ export default function OperationsSettlementPage() {
               setSelectedEndDateStr(val);
               loadStats(val);
             }}
-            style={{ width: '180px', padding: '8px 12px', fontSize: '0.95rem' }}
+            onClick={(e) => {
+              try {
+                e.currentTarget.showPicker();
+              } catch (err) {
+                console.error("showPicker not supported", err);
+              }
+            }}
+            style={{ width: '180px', padding: '8px 12px', fontSize: '0.95rem', cursor: 'pointer' }}
           />
         </div>
       </div>
