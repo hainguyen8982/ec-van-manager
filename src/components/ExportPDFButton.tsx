@@ -58,26 +58,12 @@ export default function ExportPDFButton({
         format: 'a4',
       });
 
-      const pdfWidth = pdf.internal.pageSize.getWidth(); // 210
-      const pageHeight = pdf.internal.pageSize.getHeight(); // 297
-      const imgHeight = (canvas.height * pdfWidth) / canvas.width;
-      
-      let heightLeft = imgHeight;
-      let position = 0;
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
 
-      // Add first page
-      pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight);
-      heightLeft -= pageHeight;
-
-      // Add subsequent pages if needed
-      while (heightLeft > 0) {
-        position = heightLeft - imgHeight;
-        pdf.addPage();
-        pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight);
-        heightLeft -= pageHeight;
-      }
+      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
       
-      const fileName = `Bao_Cao_Chot_So_${settlement.start_date ? settlement.start_date.split('T')[0] : 'T' + settlement.week_number}.pdf`;
+      const fileName = `Bao_Cao_Chot_So_${settlement.start_date ? settlement.start_date : 'T' + settlement.week_number}.pdf`;
       pdf.save(fileName);
 
     } catch (error) {
@@ -123,22 +109,16 @@ export default function ExportPDFButton({
           {/* Summary Section */}
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '30px', padding: '15px', background: '#f8f9fa', borderRadius: '8px', border: '1px solid #dee2e6' }}>
             <div style={{ flex: 1 }}>
-              <p style={{ margin: '0 0 5px 0', fontSize: '13px', color: '#555' }}>Tổng Doanh Thu:</p>
-              <h2 style={{ margin: 0, fontSize: '18px', color: '#16a34a' }}>+ {fmt(settlement.total_income)} VNĐ</h2>
+              <p style={{ margin: '0 0 5px 0', fontSize: '14px', color: '#555' }}>Tổng Doanh Thu:</p>
+              <h2 style={{ margin: 0, fontSize: '20px', color: '#16a34a' }}>+ {fmt(settlement.total_income)} VNĐ</h2>
             </div>
             <div style={{ flex: 1 }}>
-              <p style={{ margin: '0 0 5px 0', fontSize: '13px', color: '#555' }}>Chi Phí Vận Hành:</p>
-              <h2 style={{ margin: 0, fontSize: '18px', color: '#dc2626' }}>- {fmt(settlement.total_expense)} VNĐ</h2>
+              <p style={{ margin: '0 0 5px 0', fontSize: '14px', color: '#555' }}>Tổng Chi Phí:</p>
+              <h2 style={{ margin: 0, fontSize: '20px', color: '#dc2626' }}>- {fmt(settlement.total_expense)} VNĐ</h2>
             </div>
-            {Number(settlement.fixed_costs || 0) > 0 && (
-              <div style={{ flex: 1 }}>
-                <p style={{ margin: '0 0 5px 0', fontSize: '13px', color: '#555' }}>Trích Lập Dự Phòng:</p>
-                <h2 style={{ margin: 0, fontSize: '18px', color: '#b45309' }}>- {fmt(settlement.fixed_costs)} VNĐ</h2>
-              </div>
-            )}
             <div style={{ flex: 1, textAlign: 'right' }}>
-              <p style={{ margin: '0 0 5px 0', fontSize: '13px', color: '#555' }}>LỢI NHUẬN RÒNG:</p>
-              <h2 style={{ margin: 0, fontSize: '20px', color: settlement.net_profit >= 0 ? '#16a34a' : '#dc2626' }}>
+              <p style={{ margin: '0 0 5px 0', fontSize: '14px', color: '#555' }}>LỢI NHUẬN RÒNG:</p>
+              <h2 style={{ margin: 0, fontSize: '24px', color: settlement.net_profit >= 0 ? '#16a34a' : '#dc2626' }}>
                 {settlement.net_profit >= 0 ? '+' : ''}{fmt(settlement.net_profit)} VNĐ
               </h2>
             </div>
