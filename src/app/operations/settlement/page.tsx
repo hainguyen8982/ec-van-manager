@@ -38,11 +38,20 @@ export default function OperationsSettlementPage() {
   const [confirmed, setConfirmed] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
   const [reserveAllocation, setReserveAllocation] = useState<number>(0);
+  const [selectedEndDateStr, setSelectedEndDateStr] = useState<string>('');
   const supabase = createClient();
 
   const fmt = (n: number) => n.toLocaleString('vi-VN');
 
-  const loadStats = useCallback(async () => {
+  const getLocalDateString = (date: Date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  const loadStats = useCallback(async (endDateStr?: string) => {
+    setLoading(true);
     const now = new Date();
 
     // 1. Get the last confirmed settlement to determine start date
@@ -55,7 +64,11 @@ export default function OperationsSettlementPage() {
       startDateObj = lastSettlement.end_date ? new Date(lastSettlement.end_date) : new Date(lastSettlement.created_at);
     }
     
-    const endDateObj = now;
+    let endDateObj = now;
+    if (endDateStr) {
+      const [year, month, day] = endDateStr.split('-').map(Number);
+      endDateObj = new Date(year, month - 1, day, 23, 59, 59, 999);
+    }
     
     // Calculate exact days for proportional fixed costs
     const startDay = new Date(startDateObj.getFullYear(), startDateObj.getMonth(), startDateObj.getDate());
@@ -114,7 +127,11 @@ export default function OperationsSettlementPage() {
     setLoading(false);
   }, [supabase]);
 
-  useEffect(() => { loadStats(); }, [loadStats]);
+  useEffect(() => {
+    const todayStr = getLocalDateString(new Date());
+    setSelectedEndDateStr(todayStr);
+    loadStats(todayStr);
+  }, [loadStats]);
 
   if (loading) return (
     <div className="page-transition" style={{ display: 'grid', gap: '1rem', padding: '1rem 0' }}>
@@ -215,6 +232,27 @@ export default function OperationsSettlementPage() {
         >
           <span>📋</span> Copy gửi Zalo
         </button>
+      </div>
+
+      {/* Chọn ngày chốt sổ */}
+      <div className="glass-panel" style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap', padding: '16px 24px' }}>
+        <div>
+          <h4 style={{ margin: 0, fontSize: '1rem', color: 'var(--text-primary)' }}>Chọn ngày kết thúc kỳ chốt sổ</h4>
+          <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Các giao dịch từ ngày này trở về trước sẽ được tính vào kỳ chốt sổ này.</p>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <input
+            type="date"
+            className="input-field"
+            value={selectedEndDateStr}
+            onChange={(e) => {
+              const val = e.target.value;
+              setSelectedEndDateStr(val);
+              loadStats(val);
+            }}
+            style={{ width: '180px', padding: '8px 12px', fontSize: '0.95rem' }}
+          />
+        </div>
       </div>
 
       <div className="glass-panel" style={{ marginBottom: '1.5rem' }}>
